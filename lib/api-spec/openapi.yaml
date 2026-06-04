@@ -3,13 +3,20 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Manuskript AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: manuscripts
+    description: Manuscript management
+  - name: jobs
+    description: Formatting jobs
+  - name: dashboard
+    description: Dashboard and summary data
+
 paths:
   /healthz:
     get:
@@ -24,6 +31,240 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /manuscripts:
+    get:
+      operationId: listManuscripts
+      tags: [manuscripts]
+      summary: List user manuscripts
+      responses:
+        "200":
+          description: List of manuscripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Manuscript"
+    post:
+      operationId: createManuscript
+      tags: [manuscripts]
+      summary: Create a new manuscript record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManuscriptInput"
+      responses:
+        "201":
+          description: Created manuscript
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Manuscript"
+
+  /manuscripts/{id}:
+    get:
+      operationId: getManuscript
+      tags: [manuscripts]
+      summary: Get a manuscript by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Manuscript
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Manuscript"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteManuscript
+      tags: [manuscripts]
+      summary: Delete a manuscript
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /manuscripts/{id}/upload-url:
+    post:
+      operationId: getUploadUrl
+      tags: [manuscripts]
+      summary: Get a presigned upload URL for a manuscript file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Upload URL response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List all formatting jobs for user
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FormattingJob"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Create a formatting job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormattingJobInput"
+      responses:
+        "201":
+          description: Created job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormattingJob"
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a formatting job by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Formatting job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormattingJob"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update a formatting job configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormattingJobUpdate"
+      responses:
+        "200":
+          description: Updated job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormattingJob"
+
+  /jobs/{id}/process:
+    post:
+      operationId: processJob
+      tags: [jobs]
+      summary: Trigger formatting processing for a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormattingJob"
+
+  /jobs/{id}/readiness:
+    get:
+      operationId: getJobReadiness
+      tags: [jobs]
+      summary: Get book readiness checklist for a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Readiness checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessReport"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent manuscript activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +275,190 @@ components:
       required:
         - status
 
+    Manuscript:
+      type: object
+      required: [id, userId, title, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        title:
+          type: string
+        originalFilename:
+          type: ["string", "null"]
+        fileKey:
+          type: ["string", "null"]
+        fileSize:
+          type: ["integer", "null"]
+        wordCount:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [pending, uploaded, processing, ready, error]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ManuscriptInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        originalFilename:
+          type: string
+
+    UploadUrlRequest:
+      type: object
+      required: [filename, contentType]
+      properties:
+        filename:
+          type: string
+        contentType:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadUrl, fileKey]
+      properties:
+        uploadUrl:
+          type: string
+        fileKey:
+          type: string
+
+    FormattingJob:
+      type: object
+      required: [id, manuscriptId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        manuscriptId:
+          type: integer
+        bookType:
+          type: ["string", "null"]
+          enum: [novel, memoir, autobiography, motivational, self_help, business, christian, training_manual, workbook, academic, null]
+        publishingTarget:
+          type: ["string", "null"]
+          enum: [amazon_kdp_paperback, amazon_kdp_hardcover, a4_print, ebook, corporate_manual, null]
+        theme:
+          type: ["string", "null"]
+          enum: [classic, modern, premium, corporate, academic, null]
+        fontFamily:
+          type: ["string", "null"]
+        fontSize:
+          type: ["integer", "null"]
+        lineSpacing:
+          type: ["string", "null"]
+        marginSize:
+          type: ["string", "null"]
+        pageNumberPosition:
+          type: ["string", "null"]
+          enum: [top_center, top_left, top_right, bottom_center, bottom_left, bottom_right, null]
+        chapterNumberStyle:
+          type: ["string", "null"]
+          enum: [arabic, roman, words, none, null]
+        status:
+          type: string
+          enum: [draft, processing, completed, error]
+        outputPdfKey:
+          type: ["string", "null"]
+        outputDocxKey:
+          type: ["string", "null"]
+        previewText:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        manuscript:
+          $ref: "#/components/schemas/Manuscript"
+
+    FormattingJobInput:
+      type: object
+      required: [manuscriptId]
+      properties:
+        manuscriptId:
+          type: integer
+        bookType:
+          type: string
+        publishingTarget:
+          type: string
+        theme:
+          type: string
+
+    FormattingJobUpdate:
+      type: object
+      properties:
+        bookType:
+          type: string
+        publishingTarget:
+          type: string
+        theme:
+          type: string
+        fontFamily:
+          type: string
+        fontSize:
+          type: integer
+        lineSpacing:
+          type: string
+        marginSize:
+          type: string
+        pageNumberPosition:
+          type: string
+        chapterNumberStyle:
+          type: string
+
+    ReadinessItem:
+      type: object
+      required: [label, passed]
+      properties:
+        label:
+          type: string
+        passed:
+          type: boolean
+        severity:
+          type: string
+          enum: [required, warning]
+
+    ReadinessReport:
+      type: object
+      required: [score, items]
+      properties:
+        score:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadinessItem"
+
+    DashboardSummary:
+      type: object
+      required: [totalManuscripts, completedExports, inProgress, planName]
+      properties:
+        totalManuscripts:
+          type: integer
+        completedExports:
+          type: integer
+        inProgress:
+          type: integer
+        planName:
+          type: string
+
+    ActivityItem:
+      type: object
+      required: [id, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [manuscript_uploaded, job_completed, job_started]
+        description:
+          type: string
+        manuscriptTitle:
+          type: ["string", "null"]
+        createdAt:
+          type: string

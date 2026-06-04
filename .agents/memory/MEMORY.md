@@ -1,0 +1,3 @@
+- [Clerk themes install](clerk-themes-install.md) — @clerk/themes must be installed separately; design subagent won't do it automatically even when told to.
+- [Tailwind v4 + Clerk themes](tailwind-v4-clerk.md) — Two required config changes for Clerk themes to work in Tailwind v4 builds.
+- [Lib stale declarations](lib-stale-declarations.md) — After adding new schema files to lib/db, run typecheck:libs before checking artifact packages or you get "no exported member" errors.
