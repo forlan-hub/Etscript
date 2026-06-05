@@ -1,17 +1,13 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import { manuscriptsTable, formattingJobsTable, activityLogTable } from "@workspace/db";
 import { eq, count, and, desc } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/dashboard/summary", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
 
   const [totalResult] = await db
     .select({ total: count() })
@@ -48,12 +44,8 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/dashboard/recent-activity", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/dashboard/recent-activity", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
 
   const activity = await db
     .select()

@@ -1,12 +1,11 @@
-import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { Check, Book } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { Link } from "wouter";
 
 export default function PricingPage() {
-  const { isSignedIn } = useUser();
+  const { user } = useAuth();
 
   const plans = [
     {
@@ -19,7 +18,7 @@ export default function PricingPage() {
         "Watermarked PDF export",
         "Basic readiness check"
       ],
-      cta: isSignedIn ? "Current Plan" : "Get Started",
+      cta: user ? "Current Plan" : "Get Started",
       primary: false
     },
     {
@@ -58,12 +57,15 @@ export default function PricingPage() {
     <div className="min-h-[100dvh] bg-background">
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="font-serif font-bold text-xl text-primary tracking-tight">Manuskript AI</Link>
+          <Link href="/" className="flex items-center gap-2 text-primary hover:opacity-90 transition-opacity">
+            <Book className="w-5 h-5" />
+            <span className="font-serif font-bold text-xl tracking-tight">Etscript</span>
+          </Link>
           <div className="flex items-center gap-4">
-            {isSignedIn ? (
+            {user ? (
               <Link href="/dashboard"><Button size="sm">Dashboard</Button></Link>
             ) : (
-              <Link href="/sign-up"><Button size="sm">Sign Up</Button></Link>
+              <Link href="/sign-in"><Button size="sm">Sign In</Button></Link>
             )}
           </div>
         </div>
@@ -103,8 +105,8 @@ export default function PricingPage() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     variant={plan.primary ? "default" : "outline"}
                   >
                     {plan.cta}

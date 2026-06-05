@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Book, LayoutDashboard, Settings, Upload, CreditCard, LogOut, FileText } from "lucide-react";
-import { useClerk, useUser } from "@clerk/react";
+import { Book, LayoutDashboard, Settings, Upload, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,8 +11,7 @@ interface AppLayoutProps {
 
 export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
   const [location] = useLocation();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { signOut, user } = useAuth();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -20,17 +19,20 @@ export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
+  const displayName = user?.user_metadata?.full_name || user?.email || "User";
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col hidden md:flex">
+      <aside className="w-full md:w-64 border-r border-border bg-card flex-col hidden md:flex">
         <div className="p-6 pb-4">
           <Link href="/dashboard" className="flex items-center gap-2 text-primary">
             <Book className="w-6 h-6" />
-            <span className="font-serif font-bold text-xl tracking-tight">Manuskript</span>
+            <span className="font-serif font-bold text-xl tracking-tight">Etscript</span>
           </Link>
         </div>
-        
+
         <nav className="flex-1 px-4 py-4 space-y-1">
           {navigation.map((item) => {
             const isActive = location === item.href || location.startsWith(`${item.href}/`);
@@ -54,15 +56,11 @@ export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-4 px-3">
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-primary font-medium text-xs">
-              {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress?.charAt(0) || "U"}
+              {initial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user?.fullName || "User"}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.emailAddresses[0]?.emailAddress}
-              </p>
+              <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
           <button
@@ -81,7 +79,7 @@ export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
         <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-card">
           <Link href="/dashboard" className="flex items-center gap-2 text-primary">
             <Book className="w-5 h-5" />
-            <span className="font-serif font-bold text-lg">Manuskript</span>
+            <span className="font-serif font-bold text-lg">Etscript</span>
           </Link>
         </header>
 
@@ -92,7 +90,7 @@ export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
             {actions && <div className="flex items-center gap-3">{actions}</div>}
           </header>
         )}
-        
+
         {/* Mobile Title */}
         {(title || actions) && (
           <div className="md:hidden px-4 py-4 flex items-center justify-between">

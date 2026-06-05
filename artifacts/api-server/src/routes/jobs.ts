@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import {
   formattingJobsTable,
@@ -22,12 +22,8 @@ function buildJobWithManuscript(job: typeof formattingJobsTable.$inferSelect, ma
   return { ...job, manuscript };
 }
 
-router.get("/jobs", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/jobs", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const jobs = await db
     .select()
     .from(formattingJobsTable)
@@ -38,12 +34,8 @@ router.get("/jobs", async (req, res): Promise<void> => {
   res.json(jobs.map((r) => buildJobWithManuscript(r.formatting_jobs, r.manuscripts)));
 });
 
-router.post("/jobs", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/jobs", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = CreateJobBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -86,12 +78,8 @@ router.post("/jobs", async (req, res): Promise<void> => {
   res.status(201).json(buildJobWithManuscript(job, manuscript));
 });
 
-router.get("/jobs/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/jobs/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = GetJobParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -117,12 +105,8 @@ router.get("/jobs/:id", async (req, res): Promise<void> => {
   res.json(buildJobWithManuscript(row.formatting_jobs, row.manuscripts));
 });
 
-router.patch("/jobs/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/jobs/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const paramsParsed = UpdateJobParams.safeParse({ id: Number(req.params.id) });
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -159,12 +143,8 @@ router.patch("/jobs/:id", async (req, res): Promise<void> => {
   res.json(buildJobWithManuscript(updated, row.manuscripts));
 });
 
-router.post("/jobs/:id/process", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/jobs/:id/process", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = ProcessJobParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -211,12 +191,8 @@ router.post("/jobs/:id/process", async (req, res): Promise<void> => {
   res.json(buildJobWithManuscript(updated, row.manuscripts));
 });
 
-router.get("/jobs/:id/readiness", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/jobs/:id/readiness", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = GetJobReadinessParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -277,7 +253,7 @@ CHAPTER ONE
 
 It begins here — your words, perfectly formatted for professional publication.
 
-The Manuskript AI formatting engine has applied your chosen typography settings, including ${font} at ${job.fontSize ?? 12}pt with ${spacing} line spacing. Margins are set to ${job.marginSize ?? "normal"} width, with page numbers positioned at the ${job.pageNumberPosition?.replace(/_/g, " ") ?? "bottom center"}.
+The Etscript formatting engine has applied your chosen typography settings, including ${font} at ${job.fontSize ?? 12}pt with ${spacing} line spacing. Margins are set to ${job.marginSize ?? "normal"} width, with page numbers positioned at the ${job.pageNumberPosition?.replace(/_/g, " ") ?? "bottom center"}.
 
 Chapter headings follow the ${job.chapterNumberStyle ?? "arabic"} numbering style, and the layout is optimized for ${job.publishingTarget?.replace(/_/g, " ") ?? "standard print"}.
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import {
   manuscriptsTable,
@@ -14,16 +14,11 @@ import {
   GetUploadUrlParams,
   GetUploadUrlBody,
 } from "@workspace/api-zod";
-import { logger } from "../lib/logger";
 
 const router = Router();
 
-router.get("/manuscripts", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/manuscripts", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const manuscripts = await db
     .select()
     .from(manuscriptsTable)
@@ -32,12 +27,8 @@ router.get("/manuscripts", async (req, res): Promise<void> => {
   res.json(manuscripts);
 });
 
-router.post("/manuscripts", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/manuscripts", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = CreateManuscriptBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -59,12 +50,8 @@ router.post("/manuscripts", async (req, res): Promise<void> => {
   res.status(201).json(manuscript);
 });
 
-router.get("/manuscripts/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/manuscripts/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = GetManuscriptParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -86,12 +73,8 @@ router.get("/manuscripts/:id", async (req, res): Promise<void> => {
   res.json(manuscript);
 });
 
-router.delete("/manuscripts/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.delete("/manuscripts/:id", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const parsed = DeleteManuscriptParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -108,12 +91,8 @@ router.delete("/manuscripts/:id", async (req, res): Promise<void> => {
   res.status(204).send();
 });
 
-router.post("/manuscripts/:id/upload-url", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/manuscripts/:id/upload-url", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
   const idParsed = GetUploadUrlParams.safeParse({ id: Number(req.params.id) });
   if (!idParsed.success) {
     res.status(400).json({ error: "Invalid id" });

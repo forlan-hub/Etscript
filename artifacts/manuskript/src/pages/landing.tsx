@@ -10,7 +10,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-primary hover:opacity-90 transition-opacity">
             <Book className="w-6 h-6" />
-            <span className="font-serif font-bold text-xl tracking-tight">Manuskript AI</span>
+            <span className="font-serif font-bold text-xl tracking-tight">Etscript</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground hidden md:block">
@@ -20,7 +20,7 @@ export default function LandingPage() {
             <Link href="/sign-in" className="text-sm font-medium text-foreground hover:text-primary">
               Log in
             </Link>
-            <Link href="/sign-up">
+            <Link href="/sign-in">
               <Button size="sm" className="font-medium">Get Started</Button>
             </Link>
           </div>
@@ -42,7 +42,7 @@ export default function LandingPage() {
               A professional's quiet workspace for formatting and publishing preparation. Precise, respectful of your work, and satisfying to use.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/sign-up">
+              <Link href="/sign-in">
                 <Button size="lg" className="h-12 px-8 text-base">Format Your Manuscript</Button>
               </Link>
               <Link href="/pricing">
@@ -89,7 +89,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="py-8 px-4 md:px-6 border-t border-border text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Manuskript AI. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Etscript. All rights reserved.</p>
       </footer>
     </div>
   );
