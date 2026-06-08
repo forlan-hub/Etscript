@@ -11,6 +11,26 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GitHub Auto-Push"
+
+[[workflows.workflow]]
+name = "GitHub Auto-Push"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/scripts run auto-push"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -41,3 +61,6 @@ channel = "stable-25_05"
 SUPABASE_URL = "https://gvvfgwklqkzdbopmcdqu.supabase.co"
 VITE_SUPABASE_URL = "https://gvvfgwklqkzdbopmcdqu.supabase.co"
 VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2dmZnd2tscWt6ZGJvcG1jZHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NzI1MzgsImV4cCI6MjA5NjE0ODUzOH0.EeoOvX9Jlqn-bPCRZ16pwV3MfOPPVTExmycJoFgfcY4"
+GITHUB_REPO_URL = "https://github.com/forlan-hub/Etscript.git"
+GITHUB_OWNER = "forlan-hub"
+GITHUB_REPO = "Etscript"

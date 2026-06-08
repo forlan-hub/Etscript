@@ -61,7 +61,7 @@ catalogs:
       specifier: ^4.1.14
       version: 4.3.0
     tsx:
-      specifier: ^4.21.0
+      specifier: 4.21.0
       version: 4.21.0
     vite:
       specifier: ^7.3.2
@@ -2761,7 +2761,7 @@ packages:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
   react-icons@5.6.0:
-    resolution: {integrity: sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==, tarball: https://registry.npmjs.org/react-icons/-/react-icons-5.6.0.tgz}
+    resolution: {integrity: sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==}
     peerDependencies:
       react: '*'
 
