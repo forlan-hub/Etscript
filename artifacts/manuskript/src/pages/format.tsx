@@ -141,28 +141,83 @@ export default function FormatPage() {
             <h2 className="text-xl font-serif font-medium">Design Theme</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {THEMES.map(t => (
-              <Card 
-                key={t.id} 
-                className={`cursor-pointer transition-all overflow-hidden hover:border-primary/50 ${theme === t.id ? 'border-primary ring-1 ring-primary shadow-sm' : ''}`}
-                onClick={() => setTheme(t.id)}
-              >
-                <div className="h-32 bg-secondary p-4 flex items-center justify-center border-b border-border">
-                  {/* Mock preview graphic */}
-                  <div className={`bg-white w-24 h-28 shadow-sm p-2 text-[4px] leading-tight ${t.id === 'classic' ? 'font-serif' : 'font-sans'}`}>
-                    <div className={`font-bold text-[6px] mb-2 ${t.id === 'classic' ? 'text-center' : ''}`}>Chapter 1</div>
-                    <div className="bg-gray-200 h-1 w-full mb-1"></div>
-                    <div className="bg-gray-200 h-1 w-5/6 mb-1"></div>
-                    <div className="bg-gray-200 h-1 w-full mb-1"></div>
-                    <div className="bg-gray-200 h-1 w-4/5 mb-1"></div>
+            {/* Classic */}
+            <Card
+              className={`cursor-pointer transition-all overflow-hidden hover:border-primary/50 ${theme === 'classic' ? 'border-primary ring-1 ring-primary shadow-sm' : ''}`}
+              onClick={() => setTheme('classic')}
+            >
+              <div className="h-40 bg-[#faf9f7] p-4 flex items-center justify-center border-b border-border">
+                <div className="bg-white w-28 h-36 shadow border border-gray-100 p-3 font-serif">
+                  <div className="text-center font-bold text-[8px] mb-2 tracking-wide">Chapter One</div>
+                  <div className="h-px bg-gray-100 mb-2" />
+                  <div className="space-y-1">
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-11/12 rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-10/12 rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-9/12 rounded-sm"></div>
                   </div>
+                  <div className="text-center text-[6px] text-gray-400 mt-3">1</div>
                 </div>
-                <CardContent className="p-4 bg-card">
-                  <h3 className="font-medium text-foreground mb-1">{t.label}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{t.preview}</p>
-                </CardContent>
-              </Card>
-            ))}
+              </div>
+              <CardContent className="p-4 bg-card">
+                <h3 className="font-serif font-semibold text-foreground mb-1">Classic</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">Traditional serif typography, centered chapter titles, justified body text.</p>
+              </CardContent>
+            </Card>
+
+            {/* Modern */}
+            <Card
+              className={`cursor-pointer transition-all overflow-hidden hover:border-primary/50 ${theme === 'modern' ? 'border-primary ring-1 ring-primary shadow-sm' : ''}`}
+              onClick={() => setTheme('modern')}
+            >
+              <div className="h-40 bg-[#f4f6f8] p-4 flex items-center justify-center border-b border-border">
+                <div className="bg-white w-28 h-36 shadow border border-gray-100 p-3 font-sans">
+                  <div className="font-bold text-[8px] mb-1 tracking-widest uppercase text-gray-700">Chapter 1</div>
+                  <div className="h-px bg-gray-300 w-3/5 mb-2" />
+                  <div className="space-y-1">
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-10/12 rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-11/12 rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-gray-200 h-[3px] w-8/12 rounded-sm"></div>
+                  </div>
+                  <div className="text-right text-[6px] text-gray-400 mt-3">1</div>
+                </div>
+              </div>
+              <CardContent className="p-4 bg-card">
+                <h3 className="font-sans font-semibold text-foreground mb-1">Modern</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">Clean sans-serif headings, rule divider below chapter titles, generous whitespace.</p>
+              </CardContent>
+            </Card>
+
+            {/* Premium */}
+            <Card
+              className={`cursor-pointer transition-all overflow-hidden hover:border-primary/50 ${theme === 'premium' ? 'border-primary ring-1 ring-primary shadow-sm' : ''}`}
+              onClick={() => setTheme('premium')}
+            >
+              <div className="h-40 bg-[#fdf8f2] p-4 flex items-center justify-center border-b border-border">
+                <div className="bg-white w-28 h-36 shadow border border-amber-50 p-3 font-serif">
+                  <div className="text-center font-bold text-[9px] mb-1 tracking-wide">Chapter One</div>
+                  <div className="text-center text-[7px] text-amber-400 mb-2">✦</div>
+                  <div className="space-y-1">
+                    <div className="bg-amber-100 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-amber-100 h-[3px] w-11/12 rounded-sm"></div>
+                    <div className="bg-amber-100 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-amber-100 h-[3px] w-10/12 rounded-sm"></div>
+                    <div className="bg-amber-100 h-[3px] w-full rounded-sm"></div>
+                    <div className="bg-amber-100 h-[3px] w-9/12 rounded-sm"></div>
+                  </div>
+                  <div className="text-center text-[6px] text-amber-300 mt-3">1</div>
+                </div>
+              </div>
+              <CardContent className="p-4 bg-card">
+                <h3 className="font-serif font-semibold text-foreground mb-1">Premium</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">Garamond-style elegance, ornate chapter ornaments, larger chapter headings.</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
 

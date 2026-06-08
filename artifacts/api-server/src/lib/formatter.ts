@@ -163,6 +163,7 @@ function resolvePageSize(
 ): [number, number] {
   switch (publishingTarget) {
     case "a4":
+    case "a4_print":
       return [595.28, 841.89];
     case "ebook":
       return [432, 576];
@@ -185,8 +186,14 @@ function resolveMargin(marginSize: string | null): number {
 function resolveLineGap(lineSpacing: string | null, fontSize: number): number {
   switch (lineSpacing) {
     case "single":
+    case "1.0":
       return fontSize * 0.15;
+    case "1.15":
+      return fontSize * 0.25;
+    case "1.5":
+      return fontSize * 0.45;
     case "double":
+    case "2.0":
       return fontSize * 0.85;
     default:
       return fontSize * 0.45;
@@ -222,7 +229,8 @@ function chapterLabel(index: number, style: string | null): string {
       }
       return `Chapter ${result}`;
     }
-    case "word": {
+    case "word":
+    case "words": {
       const words = [
         "",
         "One",
@@ -293,8 +301,24 @@ async function generatePdf(
 
     doc.moveDown(4);
     doc.font(boldFont)
-      .fontSize(fontSize + 4)
+      .fontSize(fontSize + (job.theme === "premium" ? 6 : 4))
       .text(label, { align: "center", width: contentWidth });
+
+    if (job.theme === "modern") {
+      doc.moveDown(0.5);
+      const lineY = doc.y;
+      doc.moveTo(margin + contentWidth * 0.2, lineY)
+        .lineTo(margin + contentWidth * 0.8, lineY)
+        .strokeColor("#aaaaaa")
+        .lineWidth(0.5)
+        .stroke();
+      doc.strokeColor("#000").lineWidth(1);
+    } else if (job.theme === "premium") {
+      doc.moveDown(0.5);
+      doc.font(bodyFont).fontSize(fontSize - 1).fillColor("#888888")
+        .text("— \u2756 —", { align: "center", width: contentWidth });
+      doc.fillColor("#000");
+    }
 
     doc.moveDown(3);
     doc.font(bodyFont).fontSize(fontSize);
@@ -358,8 +382,11 @@ async function generateDocx(
 
   const lineSpacingMap: Record<string, number> = {
     single: 240,
+    "1.0": 240,
+    "1.15": 276,
     "1.5": 360,
     double: 480,
+    "2.0": 480,
   };
   const lineRule = lineSpacingMap[job.lineSpacing ?? ""] ?? 360;
 
@@ -467,16 +494,28 @@ function buildPreviewHtml(
 ): string {
   const font = job.fontFamily ?? "Georgia";
   const fontSize = job.fontSize ?? 12;
-  const lineHeight = job.lineSpacing === "double" ? 2.2 : job.lineSpacing === "single" ? 1.4 : 1.7;
+  const lsMap: Record<string, number> = { "1.0": 1.4, single: 1.4, "1.15": 1.55, "1.5": 1.7, "2.0": 2.2, double: 2.2 };
+  const lineHeight = lsMap[job.lineSpacing ?? ""] ?? 1.7;
+  const theme = job.theme ?? "classic";
+
+  const chapterDivider =
+    theme === "modern"
+      ? `<div style="width:60%;height:1px;background:#ccc;margin:0.5em auto 1.5em"></div>`
+      : theme === "premium"
+        ? `<div style="text-align:center;color:#aaa;font-size:${fontSize - 1}px;margin:0.5em 0 1.5em">&#10006;</div>`
+        : "";
+
+  const chapterHeadingSize = theme === "premium" ? fontSize + 6 : fontSize + 4;
 
   const chaptersHtml = chapters
     .slice(0, 2)
     .map(
       (ch, idx) => `
     <div style="margin-bottom:2em">
-      <h2 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 4}px;margin-bottom:1.5em">
+      <h2 style="text-align:center;font-family:${font},serif;font-size:${chapterHeadingSize}px;margin-bottom:0.4em;font-weight:bold">
         ${ch.title && /^(chapter|part)/i.test(ch.title) ? ch.title : chapterLabel(idx, job.chapterNumberStyle)}
       </h2>
+      ${chapterDivider}
       ${ch.paragraphs
         .slice(0, 4)
         .map(
@@ -486,7 +525,7 @@ function buildPreviewHtml(
         .join("")}
     </div>`,
     )
-    .join('<hr style="border:none;border-top:1px solid #ccc;margin:2em 0">');
+    .join('<div style="border:none;border-top:1px solid #eee;margin:2em 0"></div>');
 
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">

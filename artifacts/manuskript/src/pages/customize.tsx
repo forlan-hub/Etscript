@@ -267,9 +267,15 @@ export default function CustomizePage() {
                 </p>
                 
                 {/* Page Number */}
-                <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-gray-500">
-                  1
-                </div>
+                {pageNumberPosition !== 'none' && (
+                  <div className={`absolute text-xs text-gray-400 ${
+                    pageNumberPosition === 'top_right' ? 'top-3 right-3' :
+                    pageNumberPosition === 'bottom_right' ? 'bottom-3 right-3' :
+                    'bottom-3 left-0 right-0 text-center'
+                  }`}>
+                    1
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
