@@ -162,7 +162,7 @@ export default function PreviewPage() {
                   <Button
                     className="w-full h-12 text-base font-medium"
                     onClick={handleProcess}
-                    disabled={score < 70 || processJob.isPending}
+                    disabled={processJob.isPending}
                   >
                     {processJob.isPending ? "Generating…" : "Generate Book Files"}
                   </Button>
