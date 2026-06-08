@@ -1,4 +1,5 @@
 import { Router } from "express";
+import fs from "fs";
 import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import {
@@ -15,6 +16,8 @@ import {
   ProcessJobParams,
   GetJobReadinessParams,
 } from "@workspace/api-zod";
+import { generateFormattedFiles } from "../lib/formatter";
+import { resolveOutputPath, fileExists } from "../lib/fileStorage";
 
 const router = Router();
 
@@ -167,11 +170,29 @@ router.post("/jobs/:id/process", requireAuth, async (req, res): Promise<void> =>
     return;
   }
 
-  const previewText = generatePreviewText(row.formatting_jobs, row.manuscripts);
+  await db
+    .update(formattingJobsTable)
+    .set({ status: "processing", updatedAt: new Date() })
+    .where(eq(formattingJobsTable.id, parsed.data.id));
+
+  const result = await generateFormattedFiles(row.formatting_jobs, row.manuscripts);
+
+  if (result.wordCount > 0 && row.manuscripts.wordCount === null) {
+    await db
+      .update(manuscriptsTable)
+      .set({ wordCount: result.wordCount, updatedAt: new Date() })
+      .where(eq(manuscriptsTable.id, row.manuscripts.id));
+  }
 
   const [updated] = await db
     .update(formattingJobsTable)
-    .set({ status: "completed", previewText, updatedAt: new Date() })
+    .set({
+      status: "completed",
+      previewText: result.previewHtml,
+      outputPdfKey: result.pdfKey,
+      outputDocxKey: result.docxKey,
+      updatedAt: new Date(),
+    })
     .where(eq(formattingJobsTable.id, parsed.data.id))
     .returning();
 
@@ -189,6 +210,55 @@ router.post("/jobs/:id/process", requireAuth, async (req, res): Promise<void> =>
     .where(eq(manuscriptsTable.id, row.manuscripts.id));
 
   res.json(buildJobWithManuscript(updated, row.manuscripts));
+});
+
+router.get("/jobs/:id/download/:format", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
+  const jobId = Number(req.params.id);
+  const format = req.params.format as "pdf" | "docx";
+
+  if (format !== "pdf" && format !== "docx") {
+    res.status(400).json({ error: "Format must be pdf or docx" });
+    return;
+  }
+
+  const [row] = await db
+    .select()
+    .from(formattingJobsTable)
+    .innerJoin(manuscriptsTable, eq(formattingJobsTable.manuscriptId, manuscriptsTable.id))
+    .where(
+      and(
+        eq(formattingJobsTable.id, jobId),
+        eq(manuscriptsTable.userId, userId),
+      ),
+    );
+
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const outputKey = format === "pdf" ? row.formatting_jobs.outputPdfKey : row.formatting_jobs.outputDocxKey;
+  if (!outputKey) {
+    res.status(404).json({ error: "File not yet generated. Please process the job first." });
+    return;
+  }
+
+  const filePath = resolveOutputPath(outputKey);
+  if (!fileExists(filePath)) {
+    res.status(404).json({ error: "File not found. Please re-process the job." });
+    return;
+  }
+
+  const safeTitle = row.manuscripts.title.replace(/[^a-z0-9]/gi, "_").slice(0, 50);
+  const filename = `${safeTitle}.${format}`;
+  const mimeType = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+  res.setHeader("Content-Type", mimeType);
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-Length", fs.statSync(filePath).size);
+
+  fs.createReadStream(filePath).pipe(res);
 });
 
 router.get("/jobs/:id/readiness", requireAuth, async (req, res): Promise<void> => {
@@ -231,35 +301,5 @@ router.get("/jobs/:id/readiness", requireAuth, async (req, res): Promise<void> =
 
   res.json({ score, items });
 });
-
-function generatePreviewText(
-  job: typeof formattingJobsTable.$inferSelect,
-  manuscript: typeof manuscriptsTable.$inferSelect,
-): string {
-  const theme = job.theme ?? "classic";
-  const font = job.fontFamily ?? "Times New Roman";
-  const spacing = job.lineSpacing ?? "double";
-  const bookType = job.bookType ?? "novel";
-
-  return `FORMATTED PREVIEW — ${manuscript.title.toUpperCase()}
-
-Book Type: ${bookType.replace(/_/g, " ")}
-Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}
-Font: ${font} | Spacing: ${spacing} | Target: ${job.publishingTarget?.replace(/_/g, " ") ?? "Standard"}
-
-─────────────────────────────────────────────────
-
-CHAPTER ONE
-
-It begins here — your words, perfectly formatted for professional publication.
-
-The Etscript formatting engine has applied your chosen typography settings, including ${font} at ${job.fontSize ?? 12}pt with ${spacing} line spacing. Margins are set to ${job.marginSize ?? "normal"} width, with page numbers positioned at the ${job.pageNumberPosition?.replace(/_/g, " ") ?? "bottom center"}.
-
-Chapter headings follow the ${job.chapterNumberStyle ?? "arabic"} numbering style, and the layout is optimized for ${job.publishingTarget?.replace(/_/g, " ") ?? "standard print"}.
-
-Your manuscript is ready for export as PDF or DOCX.
-
-─────────────────────────────────────────────────`;
-}
 
 export default router;

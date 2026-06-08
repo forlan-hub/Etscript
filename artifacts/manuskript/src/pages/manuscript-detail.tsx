@@ -11,7 +11,7 @@ export default function ManuscriptDetailPage() {
   const [, params] = useRoute("/manuscripts/:id");
   const manuscriptId = params?.id ? parseInt(params.id, 10) : 0;
 
-  const { data: manuscript, isLoading: isMsLoading } = useGetManuscript(manuscriptId, { query: { enabled: !!manuscriptId } });
+  const { data: manuscript, isLoading: isMsLoading } = useGetManuscript(manuscriptId, { query: { enabled: !!manuscriptId } as any });
   const { data: jobs, isLoading: isJobsLoading } = useListJobs();
   const createJob = useCreateJob();
 

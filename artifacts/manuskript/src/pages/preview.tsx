@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,32 +7,49 @@ import { useGetJob, useGetJobReadiness, useProcessJob } from "@workspace/api-cli
 import { CheckCircle2, AlertTriangle, FileDown, Loader2, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth-context";
 
 export default function PreviewPage() {
   const [, params] = useRoute("/preview/:jobId");
   const jobId = params?.jobId ? parseInt(params.jobId, 10) : 0;
   const [, setLocation] = useLocation();
+  const { session } = useAuth();
 
-  const { data: job, isLoading: isJobLoading, refetch: refetchJob } = useGetJob(jobId, { query: { enabled: !!jobId } });
-  const { data: readiness, isLoading: isReadinessLoading } = useGetJobReadiness(jobId, { query: { enabled: !!jobId } });
-  
-  // Note: assuming useProcessJob exists. If not, this might throw, but per PRD it does.
+  const { data: job, isLoading: isJobLoading, refetch: refetchJob } = useGetJob(jobId, { query: { enabled: !!jobId } as any });
+  const { data: readiness, isLoading: isReadinessLoading } = useGetJobReadiness(jobId, { query: { enabled: !!jobId } as any });
   const processJob = useProcessJob();
 
-  // Polling mechanism if processing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (job?.status === 'processing') {
-      interval = setInterval(() => {
-        refetchJob();
-      }, 3000);
+    let interval: ReturnType<typeof setInterval>;
+    if (job?.status === "processing") {
+      interval = setInterval(() => { refetchJob(); }, 2000);
     }
     return () => clearInterval(interval);
   }, [job?.status, refetchJob]);
 
   const handleProcess = async () => {
-    await processJob.mutateAsync({ params: { id: jobId } });
+    await processJob.mutateAsync({ id: jobId });
     refetchJob();
+  };
+
+  const downloadUrl = (format: "pdf" | "docx") => `/api/jobs/${jobId}/download/${format}`;
+
+  const handleDownload = async (format: "pdf" | "docx") => {
+    const token = session?.access_token;
+    const res = await fetch(downloadUrl(format), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      alert("Download failed. Please try processing the job again.");
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${job?.manuscript?.title ?? "manuscript"}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (isJobLoading || isReadinessLoading) {
@@ -43,18 +60,21 @@ export default function PreviewPage() {
     );
   }
 
-  const isCompleted = job?.status === 'completed';
-  const isProcessing = job?.status === 'processing';
+  const isCompleted = job?.status === "completed";
+  const isProcessing = job?.status === "processing";
   const score = readiness?.score || 0;
 
   return (
-    <AppLayout title="Preview & Export" actions={
-      <Button variant="outline" onClick={() => setLocation(`/customize/${jobId}`)} disabled={isProcessing}>
-        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Edit
-      </Button>
-    }>
+    <AppLayout
+      title="Preview & Export"
+      actions={
+        <Button variant="outline" onClick={() => setLocation(`/customize/${jobId}`)} disabled={isProcessing}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Edit
+        </Button>
+      }
+    >
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         <div className="lg:col-span-5 space-y-6">
           <Card>
             <CardHeader className="bg-secondary/50 border-b border-border">
@@ -63,7 +83,7 @@ export default function PreviewPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4 mb-6">
-                <div className={`text-4xl font-bold ${score >= 90 ? 'text-green-600' : score >= 70 ? 'text-yellow-600' : 'text-destructive'}`}>
+                <div className={`text-4xl font-bold ${score >= 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : "text-destructive"}`}>
                   {score}%
                 </div>
                 <div className="flex-1">
@@ -79,18 +99,16 @@ export default function PreviewPage() {
                   <div key={idx} className="flex gap-3 text-sm">
                     {item.passed ? (
                       <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                    ) : item.severity === 'required' ? (
+                    ) : item.severity === "required" ? (
                       <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
                     ) : (
                       <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />
                     )}
                     <div>
-                      <p className={`font-medium ${item.passed ? 'text-foreground' : 'text-foreground'}`}>
-                        {item.label}
-                      </p>
+                      <p className="font-medium">{item.label}</p>
                       {!item.passed && (
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.severity === 'required' ? 'Must fix before exporting' : 'Recommendation'}
+                          {item.severity === "required" ? "Must fix before exporting" : "Recommendation"}
                         </p>
                       )}
                     </div>
@@ -108,17 +126,15 @@ export default function PreviewPage() {
                     <CheckCircle2 className="w-6 h-6" />
                     <h3 className="font-semibold text-lg">Formatting Complete</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">Your publication-ready files are generated and ready to download.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your publication-ready files are generated and ready to download.
+                  </p>
                   <div className="flex flex-col gap-3 pt-2">
-                    <Button className="w-full gap-2" variant="default" asChild>
-                      <a href={job.outputPdfKey ? `https://example.com/${job.outputPdfKey}` : '#'} target="_blank" rel="noreferrer">
-                        <FileDown className="w-4 h-4" /> Download Print PDF
-                      </a>
+                    <Button className="w-full gap-2" onClick={() => handleDownload("pdf")}>
+                      <FileDown className="w-4 h-4" /> Download Print PDF
                     </Button>
-                    <Button className="w-full gap-2" variant="outline" asChild>
-                      <a href={job.outputDocxKey ? `https://example.com/${job.outputDocxKey}` : '#'} target="_blank" rel="noreferrer">
-                        <FileDown className="w-4 h-4" /> Download eBook DOCX
-                      </a>
+                    <Button className="w-full gap-2" variant="outline" onClick={() => handleDownload("docx")}>
+                      <FileDown className="w-4 h-4" /> Download eBook DOCX
                     </Button>
                   </div>
                 </div>
@@ -127,19 +143,28 @@ export default function PreviewPage() {
                   <Loader2 className="w-10 h-10 text-primary animate-spin" />
                   <div>
                     <h3 className="font-semibold text-lg">Processing Manuscript</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Applying typography, pagination, and layouts...</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Applying typography, pagination, and layouts…
+                    </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg">Ready to Generate</h3>
-                  <p className="text-sm text-muted-foreground">Once generated, you can download the PDF and DOCX files. This process takes about a minute.</p>
-                  <Button 
-                    className="w-full h-12 text-base font-medium" 
+                  <p className="text-sm text-muted-foreground">
+                    Once generated, you can download your formatted PDF and DOCX files.
+                    {!job?.manuscript?.fileKey && (
+                      <span className="block mt-1 text-yellow-600">
+                        No file uploaded — sample formatting will be used for the preview.
+                      </span>
+                    )}
+                  </p>
+                  <Button
+                    className="w-full h-12 text-base font-medium"
                     onClick={handleProcess}
                     disabled={score < 70 || processJob.isPending}
                   >
-                    {processJob.isPending ? "Starting..." : "Generate Book Files"}
+                    {processJob.isPending ? "Generating…" : "Generate Book Files"}
                   </Button>
                 </div>
               )}
@@ -151,15 +176,21 @@ export default function PreviewPage() {
           <Card className="h-full">
             <CardHeader className="bg-secondary/50 border-b border-border">
               <CardTitle className="font-serif">Sample Output</CardTitle>
-              <CardDescription>A preview of how your text flows</CardDescription>
+              <CardDescription>A preview of how your text flows with the selected settings</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="bg-[#f9f8f6] p-8 md:p-12 min-h-[600px] overflow-auto text-gray-900 border-l border-border/50">
                 {job?.previewText ? (
-                  <div className="prose prose-stone max-w-none" dangerouslySetInnerHTML={{ __html: job.previewText }} />
+                  <div
+                    className="prose prose-stone max-w-none"
+                    dangerouslySetInnerHTML={{ __html: job.previewText }}
+                  />
                 ) : (
                   <div className="text-center py-20 text-muted-foreground">
-                    Preview generated during processing...
+                    <p className="text-sm">Preview will appear here after processing.</p>
+                    <p className="text-xs mt-2 text-muted-foreground/60">
+                      Click "Generate Book Files" to format your manuscript.
+                    </p>
                   </div>
                 )}
               </div>

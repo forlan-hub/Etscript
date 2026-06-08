@@ -18,7 +18,7 @@ export default function CustomizePage() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: job, isLoading } = useGetJob(jobId, { query: { enabled: !!jobId } });
+  const { data: job, isLoading } = useGetJob(jobId, { query: { enabled: !!jobId } as any });
   const updateJob = useUpdateJob();
   
   const [fontFamily, setFontFamily] = useState("Garamond");

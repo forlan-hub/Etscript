@@ -31,7 +31,7 @@ export default function FormatPage() {
   const jobId = params?.jobId ? parseInt(params.jobId, 10) : 0;
   const [, setLocation] = useLocation();
 
-  const { data: job, isLoading } = useGetJob(jobId, { query: { enabled: !!jobId } });
+  const { data: job, isLoading } = useGetJob(jobId, { query: { enabled: !!jobId } as any });
   const updateJob = useUpdateJob();
   
   const [bookType, setBookType] = useState<string>("");

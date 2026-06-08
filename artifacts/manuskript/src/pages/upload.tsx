@@ -4,19 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
-import { useCreateManuscript, useCreateJob } from "@workspace/api-client-react";
-import { UploadCloud, File, AlertCircle } from "lucide-react";
+import { useCreateManuscript, useCreateJob, useGetUploadUrl } from "@workspace/api-client-react";
+import { UploadCloud, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 
 export default function UploadPage() {
   const [, setLocation] = useLocation();
+  const { session } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [step, setStep] = useState<"idle" | "creating" | "uploading" | "done">("idle");
 
   const createManuscript = useCreateManuscript();
+  const getUploadUrl = useGetUploadUrl();
   const createJob = useCreateJob();
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -32,20 +38,13 @@ export default function UploadPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (isValidFile(droppedFile)) {
         setFile(droppedFile);
-        if (!title) {
-          setTitle(droppedFile.name.replace(/\.[^/.]+$/, ""));
-        }
+        if (!title) setTitle(droppedFile.name.replace(/\.[^/.]+$/, ""));
       } else {
-        toast({
-          title: "Invalid file type",
-          description: "Please upload a .docx or .txt file",
-          variant: "destructive"
-        });
+        toast({ title: "Invalid file type", description: "Please upload a .docx or .txt file", variant: "destructive" });
       }
     }
   };
@@ -55,61 +54,64 @@ export default function UploadPage() {
       const selectedFile = e.target.files[0];
       if (isValidFile(selectedFile)) {
         setFile(selectedFile);
-        if (!title) {
-          setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
-        }
+        if (!title) setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
       }
     }
   };
 
-  const isValidFile = (file: File) => {
-    return file.name.endsWith('.docx') || file.name.endsWith('.txt');
-  };
+  const isValidFile = (f: File) => f.name.endsWith(".docx") || f.name.endsWith(".txt");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!title.trim() || !file) {
-      toast({
-        title: "Missing fields",
-        description: "Please provide a title and select a file.",
-        variant: "destructive"
-      });
+      toast({ title: "Missing fields", description: "Please provide a title and select a file.", variant: "destructive" });
       return;
     }
 
     try {
-      // 1. Create Manuscript
-      const manuscript = await createManuscript.mutateAsync({
-        data: {
-          title,
-          originalFilename: file.name
-        }
+      setStep("creating");
+      setUploadProgress(10);
+
+      const manuscript = await createManuscript.mutateAsync({ data: { title, originalFilename: file.name } });
+      setUploadProgress(25);
+
+      const uploadInfo = await getUploadUrl.mutateAsync({
+        id: manuscript.id,
+        data: { filename: file.name, contentType: file.type || "application/octet-stream" },
+      });
+      setUploadProgress(35);
+
+      setStep("uploading");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const token = session?.access_token;
+      const response = await fetch(uploadInfo.uploadUrl, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
       });
 
-      // (In a real app, upload file to S3 here using useGetUploadUrl)
-      
-      // 2. Create Formatting Job
-      const job = await createJob.mutateAsync({
-        data: {
-          manuscriptId: manuscript.id
-        }
-      });
+      if (!response.ok) {
+        throw new Error("File upload failed");
+      }
+      setUploadProgress(75);
 
-      // 3. Navigate to Format wizard
+      const job = await createJob.mutateAsync({ data: { manuscriptId: manuscript.id } });
+      setUploadProgress(100);
+      setStep("done");
+
+      await new Promise((r) => setTimeout(r, 500));
       setLocation(`/format/${job.id}`);
-      
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Upload failed",
-        description: "There was an error creating your manuscript.",
-        variant: "destructive"
-      });
+      setStep("idle");
+      setUploadProgress(0);
+      toast({ title: "Upload failed", description: "There was an error uploading your manuscript.", variant: "destructive" });
     }
   };
 
-  const isLoading = createManuscript.isPending || createJob.isPending;
+  const isLoading = step !== "idle";
 
   return (
     <AppLayout title="New Manuscript">
@@ -117,26 +119,24 @@ export default function UploadPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">Upload Manuscript</CardTitle>
-            <CardDescription>
-              We accept Microsoft Word (.docx) and plain text (.txt) files.
-            </CardDescription>
+            <CardDescription>We accept Microsoft Word (.docx) and plain text (.txt) files up to 50 MB.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Manuscript Title</Label>
-                <Input 
-                  id="title" 
+                <Input
+                  id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. The Great Gatsby"
+                  placeholder="e.g. The Great Adventure"
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Manuscript File</Label>
-                <div 
+                <div
                   className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors ${
                     isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                   }`}
@@ -153,13 +153,7 @@ export default function UploadPage() {
                         <p className="text-sm font-medium text-foreground">{file.name}</p>
                         <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setFile(null)}
-                        disabled={isLoading}
-                      >
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)} disabled={isLoading}>
                         Change file
                       </Button>
                     </div>
@@ -169,22 +163,12 @@ export default function UploadPage() {
                         <UploadCloud className="w-8 h-8" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">
-                          Drag and drop your file here, or
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          DOCX or TXT files up to 50MB
-                        </p>
+                        <p className="text-sm font-medium text-foreground">Drag and drop your file here, or</p>
+                        <p className="text-xs text-muted-foreground mt-1">DOCX or TXT files up to 50 MB</p>
                       </div>
-                      <Input 
-                        id="file" 
-                        type="file" 
-                        accept=".docx,.txt" 
-                        className="hidden" 
-                        onChange={handleFileChange}
-                      />
-                      <Label 
-                        htmlFor="file" 
+                      <Input id="file" type="file" accept=".docx,.txt" className="hidden" onChange={handleFileChange} />
+                      <Label
+                        htmlFor="file"
                         className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"
                       >
                         Browse Files
@@ -194,9 +178,27 @@ export default function UploadPage() {
                 </div>
               </div>
 
+              {isLoading && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {step === "done" ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 animate-pulse" />
+                    )}
+                    <span>
+                      {step === "creating" && "Creating manuscript record…"}
+                      {step === "uploading" && "Uploading file…"}
+                      {step === "done" && "Done! Redirecting…"}
+                    </span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-1.5" />
+                </div>
+              )}
+
               <div className="pt-4 flex justify-end">
                 <Button type="submit" disabled={isLoading || !file || !title.trim()} className="px-8">
-                  {isLoading ? "Processing..." : "Continue to Setup"}
+                  {isLoading ? "Processing…" : "Continue to Setup"}
                 </Button>
               </div>
             </form>
