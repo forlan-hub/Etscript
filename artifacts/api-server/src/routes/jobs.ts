@@ -1,5 +1,4 @@
 import { Router } from "express";
-import fs from "fs";
 import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import {
@@ -16,8 +15,8 @@ import {
   ProcessJobParams,
   GetJobReadinessParams,
 } from "@workspace/api-zod";
-import { generateFormattedFiles } from "../lib/formatter";
-import { resolveOutputPath, fileExists } from "../lib/fileStorage";
+import { generateFormattedFiles, generateDocumentBuffer, MissingUploadError } from "../lib/formatter";
+import { getCleanAccess } from "../lib/entitlements";
 
 const router = Router();
 
@@ -244,21 +243,37 @@ router.get("/jobs/:id/download/:format", requireAuth, async (req, res): Promise<
     return;
   }
 
-  const filePath = resolveOutputPath(outputKey);
-  if (!fileExists(filePath)) {
-    res.status(404).json({ error: "File not found. Please re-process the job." });
+  const access = await getCleanAccess(userId, jobId);
+
+  let buffer: Buffer;
+  try {
+    buffer = await generateDocumentBuffer(row.formatting_jobs, row.manuscripts, format, {
+      watermark: !access.canDownloadClean,
+    });
+  } catch (err) {
+    if (err instanceof MissingUploadError) {
+      res.status(404).json({
+        error: "The uploaded manuscript file is no longer available. Please re-upload it.",
+      });
+      return;
+    }
+    req.log.error({ err: String(err) }, "document generation failed");
+    res.status(500).json({ error: "Could not generate document" });
     return;
   }
 
   const safeTitle = row.manuscripts.title.replace(/[^a-z0-9]/gi, "_").slice(0, 50);
   const filename = `${safeTitle}.${format}`;
-  const mimeType = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const mimeType =
+    format === "pdf"
+      ? "application/pdf"
+      : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
   res.setHeader("Content-Type", mimeType);
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  res.setHeader("Content-Length", fs.statSync(filePath).size);
+  res.setHeader("Content-Length", buffer.length);
 
-  fs.createReadStream(filePath).pipe(res);
+  res.send(buffer);
 });
 
 router.get("/jobs/:id/readiness", requireAuth, async (req, res): Promise<void> => {

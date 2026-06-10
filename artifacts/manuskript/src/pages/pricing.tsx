@@ -1,14 +1,58 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Book } from "lucide-react";
+import { Check, Book, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useCreateCheckout } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
+
+type PlanKey = "free" | "payg" | "premium";
 
 export default function PricingPage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const checkout = useCreateCheckout();
 
-  const plans = [
+  const startPremium = async () => {
+    if (!user) {
+      setLocation("/sign-in");
+      return;
+    }
+    try {
+      const res = await checkout.mutateAsync({ data: { type: "premium_subscription" } });
+      window.location.href = res.authorizationUrl;
+    } catch {
+      toast({
+        title: "Could not start checkout",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCta = (key: PlanKey) => {
+    if (key === "premium") {
+      startPremium();
+      return;
+    }
+    // Free + Pay-As-You-Go both funnel into the app (PAYG is purchased
+    // per-book on the preview screen, once a job exists).
+    setLocation(user ? "/dashboard" : "/sign-in");
+  };
+
+  const plans: {
+    key: PlanKey;
+    name: string;
+    price: string;
+    period?: string;
+    description: string;
+    features: string[];
+    cta: string;
+    primary: boolean;
+  }[] = [
     {
+      key: "free",
       name: "Free",
       price: "₦0",
       description: "For authors starting out",
@@ -16,12 +60,13 @@ export default function PricingPage() {
         "1 Manuscript upload",
         "Classic theme only",
         "Watermarked PDF export",
-        "Basic readiness check"
+        "Basic readiness check",
       ],
-      cta: user ? "Current Plan" : "Get Started",
-      primary: false
+      cta: user ? "Go to Dashboard" : "Get Started",
+      primary: false,
     },
     {
+      key: "payg",
       name: "Pay-As-You-Go",
       price: "₦2,500",
       period: "/ export",
@@ -31,12 +76,13 @@ export default function PricingPage() {
         "Custom typography & layouts",
         "Print-ready PDF & DOCX",
         "Full readiness report",
-        "No watermarks"
+        "No watermarks",
       ],
       cta: "Format a Book",
-      primary: true
+      primary: true,
     },
     {
+      key: "premium",
       name: "Premium",
       price: "₦5,000",
       period: "/ month",
@@ -46,11 +92,11 @@ export default function PricingPage() {
         "All premium features",
         "Priority processing",
         "Save custom templates",
-        "Email support"
+        "Email support",
       ],
       cta: "Subscribe Now",
-      primary: false
-    }
+      primary: false,
+    },
   ];
 
   return (
@@ -79,41 +125,47 @@ export default function PricingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {plans.map((plan, i) => (
-              <Card key={i} className={`relative flex flex-col ${plan.primary ? 'border-primary shadow-lg scale-105 z-10' : 'border-border'}`}>
-                {plan.primary && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-xl font-serif">{plan.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground h-10">{plan.description}</p>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
-                  </div>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, j) => (
-                      <li key={j} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm text-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    variant={plan.primary ? "default" : "outline"}
-                  >
-                    {plan.cta}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {plans.map((plan) => {
+              const isPremiumLoading = plan.key === "premium" && checkout.isPending;
+              return (
+                <Card key={plan.key} className={`relative flex flex-col ${plan.primary ? 'border-primary shadow-lg scale-105 z-10' : 'border-border'}`}>
+                  {plan.primary && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
+                      Most Popular
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-xl font-serif">{plan.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground h-10">{plan.description}</p>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                      {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
+                    </div>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, j) => (
+                        <li key={j} className="flex items-start gap-3">
+                          <Check className="w-5 h-5 text-primary shrink-0" />
+                          <span className="text-sm text-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      className="w-full gap-2"
+                      variant={plan.primary ? "default" : "outline"}
+                      onClick={() => handleCta(plan.key)}
+                      disabled={isPremiumLoading}
+                    >
+                      {isPremiumLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {plan.cta}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </main>

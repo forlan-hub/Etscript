@@ -7,6 +7,7 @@ import {
   Packer,
   AlignmentType,
   Footer,
+  Header,
   PageNumber,
   SectionType,
   convertInchesToTwip,
@@ -14,7 +15,7 @@ import {
 } from "docx";
 import fs from "fs";
 import mammoth from "mammoth";
-import { getOutputPath, outputFileKey, resolveUploadPath, fileExists } from "./fileStorage";
+import { outputFileKey, resolveUploadPath, fileExists } from "./fileStorage";
 
 type JobOptions = {
   id: number;
@@ -43,6 +44,14 @@ export type FormattedResult = {
   previewHtml: string;
   wordCount: number;
 };
+
+/** Thrown when a manuscript references an uploaded file that is gone from disk. */
+export class MissingUploadError extends Error {
+  override readonly name = "MissingUploadError";
+  constructor() {
+    super("Uploaded manuscript file is missing");
+  }
+}
 
 type Chapter = {
   title: string;
@@ -251,11 +260,12 @@ function chapterLabel(index: number, style: string | null): string {
   }
 }
 
-async function generatePdf(
+async function generatePdfBuffer(
   job: JobOptions,
   manuscript: ManuscriptInfo,
   chapters: Chapter[],
-): Promise<void> {
+  watermark: boolean,
+): Promise<Buffer> {
   const [width, height] = resolvePageSize(job.publishingTarget);
   const margin = resolveMargin(job.marginSize);
   const bodyFont = resolvePdfFont(job.fontFamily);
@@ -263,7 +273,6 @@ async function generatePdf(
   const fontSize = job.fontSize ?? 12;
   const lineGap = resolveLineGap(job.lineSpacing, fontSize);
   const pageNumPos = job.pageNumberPosition ?? "bottom_center";
-  const outputPath = getOutputPath(job.id, "pdf");
 
   const doc = new PDFDocument({
     size: [width, height],
@@ -335,12 +344,43 @@ async function generatePdf(
     }
   });
 
-  // ── Page numbers ─────────────────────────────────────────
-  if (pageNumPos !== "none") {
-    const range = doc.bufferedPageRange();
-    for (let i = range.start; i < range.start + range.count; i++) {
-      if (i === range.start) continue; // skip title page
-      doc.switchToPage(i);
+  // ── Per-page watermark + page numbers ───────────────────
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+
+    if (watermark) {
+      // Diagonal translucent stamp across the whole page.
+      doc.save();
+      doc.rotate(-45, { origin: [width / 2, height / 2] });
+      doc
+        .font(boldFont)
+        .fontSize(46)
+        .fillColor("#888888")
+        .opacity(0.1)
+        .text("ETSCRIPT  SAMPLE", width / 2 - 300, height / 2 - 28, {
+          width: 600,
+          align: "center",
+        });
+      doc.restore();
+
+      // Footer notice repeated on every page.
+      doc.save();
+      doc
+        .font(bodyFont)
+        .fontSize(7.5)
+        .fillColor("#999999")
+        .opacity(0.95)
+        .text(
+          "Preview generated with Etscript — purchase to remove this watermark",
+          margin,
+          height - margin / 2 + 6,
+          { width: contentWidth, align: "center" },
+        );
+      doc.restore();
+    }
+
+    if (pageNumPos !== "none" && i !== range.start) {
       const pageNum = String(i - range.start);
       doc.font(bodyFont).fontSize(9).fillColor("#555");
 
@@ -361,20 +401,19 @@ async function generatePdf(
     }
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const out = fs.createWriteStream(outputPath);
-    doc.pipe(out);
-    out.on("finish", resolve);
-    out.on("error", reject);
+  return await new Promise<Buffer>((resolve, reject) => {
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
     doc.end();
   });
 }
 
-async function generateDocx(
+async function generateDocxBuffer(
   job: JobOptions,
   manuscript: ManuscriptInfo,
   chapters: Chapter[],
-): Promise<void> {
+  watermark: boolean,
+): Promise<Buffer> {
   const fontSize = (job.fontSize ?? 12) * 2; // docx uses half-points
   const margin = resolveMargin(job.marginSize);
   const marginTwips = Math.round((margin / 72) * 1440);
@@ -455,10 +494,50 @@ async function generateDocx(
     }
   });
 
-  const footerPara = new Paragraph({
-    alignment: footerAlign,
-    children: [new TextRun({ children: [PageNumber.CURRENT] })],
-  });
+  const footerChildren: Paragraph[] = [];
+  if (watermark) {
+    footerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            text: "Preview generated with Etscript — purchase to remove this watermark",
+            size: 14,
+            color: "999999",
+            italics: true,
+          }),
+        ],
+      }),
+    );
+  }
+  if (pageNumPos !== "none") {
+    footerChildren.push(
+      new Paragraph({
+        alignment: footerAlign,
+        children: [new TextRun({ children: [PageNumber.CURRENT] })],
+      }),
+    );
+  }
+
+  const headers = watermark
+    ? {
+        default: new Header({
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: "ETSCRIPT SAMPLE — PURCHASE TO REMOVE WATERMARK",
+                  size: 16,
+                  color: "BBBBBB",
+                  bold: true,
+                }),
+              ],
+            }),
+          ],
+        }),
+      }
+    : undefined;
 
   const doc = new Document({
     sections: [
@@ -474,17 +553,17 @@ async function generateDocx(
             },
           },
         },
+        headers,
         footers:
-          pageNumPos !== "none"
-            ? { default: new Footer({ children: [footerPara] }) }
+          footerChildren.length > 0
+            ? { default: new Footer({ children: footerChildren }) }
             : undefined,
         children: sectionChildren,
       },
     ],
   });
 
-  const buffer = await Packer.toBuffer(doc);
-  fs.writeFileSync(getOutputPath(job.id, "docx"), buffer);
+  return await Packer.toBuffer(doc);
 }
 
 function buildPreviewHtml(
@@ -548,18 +627,39 @@ export async function generateFormattedFiles(
 
   const wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
   const chapters = parseChapters(rawText, manuscript.title);
-
-  await Promise.all([
-    generatePdf(job, manuscript, chapters),
-    generateDocx(job, manuscript, chapters),
-  ]);
-
   const previewHtml = buildPreviewHtml(manuscript, chapters, job);
 
+  // Output files are regenerated on demand at download time (autoscale uses an
+  // ephemeral disk), so processing only produces the preview and metadata.
   return {
     pdfKey: outputFileKey(job.id, "pdf"),
     docxKey: outputFileKey(job.id, "docx"),
     previewHtml,
     wordCount,
   };
+}
+
+export type DocumentFormat = "pdf" | "docx";
+
+export async function generateDocumentBuffer(
+  job: JobOptions,
+  manuscript: ManuscriptInfo,
+  format: DocumentFormat,
+  opts: { watermark: boolean },
+): Promise<Buffer> {
+  let rawText = "";
+
+  if (manuscript.fileKey) {
+    const filePath = resolveUploadPath(manuscript.fileKey);
+    if (!fileExists(filePath)) {
+      throw new MissingUploadError();
+    }
+    rawText = await extractText(manuscript.fileKey, manuscript.originalFilename ?? "");
+  }
+
+  const chapters = parseChapters(rawText, manuscript.title);
+
+  return format === "pdf"
+    ? generatePdfBuffer(job, manuscript, chapters, opts.watermark)
+    : generateDocxBuffer(job, manuscript, chapters, opts.watermark);
 }

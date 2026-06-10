@@ -14,6 +14,7 @@ import PreviewPage from "./pages/preview";
 import ManuscriptDetailPage from "./pages/manuscript-detail";
 import PricingPage from "./pages/pricing";
 import SettingsPage from "./pages/settings";
+import PaymentCallbackPage from "./pages/payment-callback";
 import SignInPage from "./pages/sign-in";
 import NotFoundPage from "./pages/not-found";
 
@@ -61,6 +62,9 @@ function AppRoutes() {
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={SettingsPage} />
+      </Route>
+      <Route path="/payment/callback">
+        <ProtectedRoute component={PaymentCallbackPage} />
       </Route>
       <Route component={NotFoundPage} />
     </Switch>

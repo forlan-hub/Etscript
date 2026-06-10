@@ -27,7 +27,15 @@ app.use(
 );
 
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
+app.use(
+  express.json({
+    // Capture the raw request body so the Paystack webhook can verify its
+    // HMAC-SHA512 signature against the exact bytes Paystack signed.
+    verify: (req, _res, buf) => {
+      (req as unknown as { rawBody?: Buffer }).rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);

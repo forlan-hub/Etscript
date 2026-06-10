@@ -3,8 +3,15 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRoute, useLocation } from "wouter";
-import { useGetJob, useGetJobReadiness, useProcessJob } from "@workspace/api-client-react";
-import { CheckCircle2, AlertTriangle, FileDown, Loader2, ArrowLeft } from "lucide-react";
+import {
+  useGetJob,
+  useGetJobReadiness,
+  useProcessJob,
+  useGetExportAccess,
+  useCreateCheckout,
+} from "@workspace/api-client-react";
+import { CheckCircle2, AlertTriangle, FileDown, Loader2, ArrowLeft, Lock, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
@@ -15,9 +22,29 @@ export default function PreviewPage() {
   const [, setLocation] = useLocation();
   const { session } = useAuth();
 
+  const { toast } = useToast();
   const { data: job, isLoading: isJobLoading, refetch: refetchJob } = useGetJob(jobId, { query: { enabled: !!jobId } as any });
   const { data: readiness, isLoading: isReadinessLoading } = useGetJobReadiness(jobId, { query: { enabled: !!jobId } as any });
+  const { data: exportAccess } = useGetExportAccess(jobId, { query: { enabled: !!jobId } as any });
   const processJob = useProcessJob();
+  const checkout = useCreateCheckout();
+
+  const canClean = exportAccess?.canDownloadClean ?? false;
+
+  const startCheckout = async (type: "payg_export" | "premium_subscription") => {
+    try {
+      const res = await checkout.mutateAsync({
+        data: { type, jobId: type === "payg_export" ? jobId : null },
+      });
+      window.location.href = res.authorizationUrl;
+    } catch {
+      toast({
+        title: "Could not start checkout",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -40,7 +67,14 @@ export default function PreviewPage() {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) {
-      alert("Download failed. Please try processing the job again.");
+      toast({
+        title: "Download failed",
+        description:
+          res.status === 404
+            ? "The uploaded file is no longer available. Please re-upload your manuscript."
+            : "Please try processing the job again.",
+        variant: "destructive",
+      });
       return;
     }
     const blob = await res.blob();
@@ -126,17 +160,64 @@ export default function PreviewPage() {
                     <CheckCircle2 className="w-6 h-6" />
                     <h3 className="font-semibold text-lg">Formatting Complete</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Your publication-ready files are generated and ready to download.
-                  </p>
-                  <div className="flex flex-col gap-3 pt-2">
-                    <Button className="w-full gap-2" onClick={() => handleDownload("pdf")}>
-                      <FileDown className="w-4 h-4" /> Download Print PDF
-                    </Button>
-                    <Button className="w-full gap-2" variant="outline" onClick={() => handleDownload("docx")}>
-                      <FileDown className="w-4 h-4" /> Download eBook DOCX
-                    </Button>
-                  </div>
+
+                  {canClean ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        {exportAccess?.plan === "premium"
+                          ? "Premium plan active — clean, watermark-free exports unlocked."
+                          : "This book is unlocked — your clean, watermark-free files are ready."}
+                      </p>
+                      <div className="flex flex-col gap-3 pt-2">
+                        <Button className="w-full gap-2" onClick={() => handleDownload("pdf")}>
+                          <FileDown className="w-4 h-4" /> Download Print PDF
+                        </Button>
+                        <Button className="w-full gap-2" variant="outline" onClick={() => handleDownload("docx")}>
+                          <FileDown className="w-4 h-4" /> Download eBook DOCX
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+                        Free downloads include an Etscript watermark. Unlock this book once, or go
+                        Premium for unlimited clean exports.
+                      </div>
+                      <div className="flex flex-col gap-3 pt-1">
+                        <Button className="w-full gap-2" variant="outline" onClick={() => handleDownload("pdf")}>
+                          <FileDown className="w-4 h-4" /> Download watermarked PDF
+                        </Button>
+                        <Button className="w-full gap-2" variant="outline" onClick={() => handleDownload("docx")}>
+                          <FileDown className="w-4 h-4" /> Download watermarked DOCX
+                        </Button>
+                      </div>
+                      <div className="border-t border-border pt-4 space-y-3">
+                        <Button
+                          className="w-full gap-2"
+                          onClick={() => startCheckout("payg_export")}
+                          disabled={checkout.isPending}
+                        >
+                          {checkout.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Lock className="w-4 h-4" />
+                          )}
+                          Unlock this book — ₦2,500
+                        </Button>
+                        <Button
+                          className="w-full gap-2"
+                          variant="secondary"
+                          onClick={() => startCheckout("premium_subscription")}
+                          disabled={checkout.isPending}
+                        >
+                          <Sparkles className="w-4 h-4" /> Go Premium — ₦5,000/mo
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          One-time unlock for this book, or unlimited exports with Premium.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : isProcessing ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">

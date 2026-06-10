@@ -1,11 +1,49 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
-import { User, Mail, Shield, LogOut } from "lucide-react";
+import { User, Mail, Shield, LogOut, CreditCard, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { useGetSubscription, useCancelSubscription } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const { data: subscription, refetch: refetchSubscription } = useGetSubscription();
+  const cancelSubscription = useCancelSubscription();
+
+  const isPremium = subscription?.plan === "premium";
+  const isCancelled = subscription?.status === "cancelled";
+
+  const handleCancel = async () => {
+    const ok = window.confirm(
+      "Cancel your Premium subscription? You'll keep clean exports until the end of the current billing period.",
+    );
+    if (!ok) return;
+    try {
+      await cancelSubscription.mutateAsync();
+      await refetchSubscription();
+      toast({
+        title: "Subscription cancelled",
+        description: "You'll keep Premium access until your current period ends.",
+      });
+    } catch {
+      toast({
+        title: "Could not cancel subscription",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fullName = user?.user_metadata?.full_name || "User";
   const email = user?.email || "";
@@ -52,6 +90,60 @@ export default function SettingsPage() {
                 <p className="text-foreground">{lastName || "Not provided"}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-xl flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" /> Subscription & Billing
+            </CardTitle>
+            <CardDescription>Manage your Etscript plan</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isPremium ? (
+              <>
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">Etscript Premium</p>
+                      <Badge variant={isCancelled ? "secondary" : "default"}>
+                        {isCancelled ? "Cancelling" : "Active"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {isCancelled ? "Access until " : "Renews on "}
+                      {formatDate(subscription?.currentPeriodEnd)}
+                    </p>
+                  </div>
+                </div>
+                {!isCancelled && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={cancelSubscription.isPending}
+                      className="gap-2"
+                    >
+                      {cancelSubscription.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Cancel subscription
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div>
+                  <p className="font-medium text-foreground">Free plan</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Exports include a watermark. Upgrade for clean, unlimited exports.
+                  </p>
+                </div>
+                <Link href="/pricing">
+                  <Button>Upgrade</Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 
