@@ -10,7 +10,7 @@ import {
   GetExportAccessResponse,
 } from "@workspace/api-zod";
 import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
-import { getProvider, amountForType, CURRENCY } from "../lib/payments";
+import { getProvider, amountForType, CURRENCY, PREMIUM_AMOUNT_KOBO } from "../lib/payments";
 import { getCleanAccess, isPremium } from "../lib/entitlements";
 import {
   getTransactionByReference,
@@ -245,15 +245,36 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       const reference = typeof data.reference === "string" ? data.reference : undefined;
       const planCode = extractWebhookPlanCode(data);
       const customerCode = customer?.customer_code;
+      const amount = typeof data.amount === "number" ? data.amount : undefined;
+      const currency = typeof data.currency === "string" ? data.currency : undefined;
       const txn = reference ? await getTransactionByReference(reference) : null;
 
       if (txn && reference) {
-        await markTransactionSuccess(reference);
-        if (txn.type === "premium_subscription") {
-          await activateSubscriptionForUser(txn.userId, { customerCode, planCode });
+        // The reference is already amount-bound at initialize; this is
+        // defense-in-depth parity with the verify path — refuse to grant when
+        // the charged amount/currency disagrees with the stored row.
+        if (
+          (amount !== undefined && amount !== txn.amount) ||
+          (currency !== undefined && currency !== txn.currency)
+        ) {
+          req.log.error(
+            { reference, expected: txn.amount, got: amount },
+            "webhook amount/currency mismatch",
+          );
+        } else {
+          await markTransactionSuccess(reference);
+          if (txn.type === "premium_subscription") {
+            await activateSubscriptionForUser(txn.userId, { customerCode, planCode });
+          }
         }
-      } else if (customerCode && planCode) {
-        // Recurring renewal charge (no matching initiating transaction row).
+      } else if (
+        customerCode &&
+        planCode &&
+        amount === PREMIUM_AMOUNT_KOBO &&
+        currency === CURRENCY
+      ) {
+        // Recurring renewal charge (no matching initiating transaction row);
+        // only extend when the charge matches the premium plan price.
         await handleRenewalByCustomer(customerCode);
       }
     } else if (eventType === "subscription.create") {

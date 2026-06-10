@@ -8,6 +8,21 @@ function provisionalPeriodEnd(): Date {
   return new Date(Date.now() + 31 * DAY_MS);
 }
 
+/**
+ * Period end to persist when (re)activating. An explicit value (from a webhook)
+ * always wins. Otherwise keep the existing end only if it is still in the
+ * future; a lapsed end must NOT be carried over, or a user who just re-paid
+ * would remain "expired" until the backstop subscription.create webhook lands.
+ */
+function effectivePeriodEnd(
+  explicit: Date | undefined,
+  existing: Date | null | undefined,
+): Date {
+  if (explicit) return explicit;
+  if (existing && existing.getTime() > Date.now()) return existing;
+  return provisionalPeriodEnd();
+}
+
 export async function getTransactionByReference(
   reference: string,
 ): Promise<Transaction | null> {
@@ -68,10 +83,10 @@ export async function activateSubscriptionForUser(
         provider: "paystack",
         providerCustomerCode: opts.customerCode ?? existing.providerCustomerCode,
         providerPlanCode: opts.planCode ?? existing.providerPlanCode,
-        currentPeriodEnd:
-          opts.currentPeriodEnd ??
-          existing.currentPeriodEnd ??
-          provisionalPeriodEnd(),
+        currentPeriodEnd: effectivePeriodEnd(
+          opts.currentPeriodEnd,
+          existing.currentPeriodEnd,
+        ),
         updatedAt: new Date(),
       })
       .where(eq(subscriptionsTable.id, existing.id));
