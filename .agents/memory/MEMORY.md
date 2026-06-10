@@ -1,3 +1,5 @@
 - [Clerk themes install](clerk-themes-install.md) — @clerk/themes must be installed separately; design subagent won't do it automatically even when told to.
 - [Tailwind v4 + Clerk themes](tailwind-v4-clerk.md) — Two required config changes for Clerk themes to work in Tailwind v4 builds.
 - [Lib stale declarations](lib-stale-declarations.md) — After adding new schema files to lib/db, run typecheck:libs before checking artifact packages or you get "no exported member" errors.
+- [Paystack e2e quirks](paystack-e2e-quirks.md) — Paystack rejects .test TLD emails; use @gmail.com. pg only resolvable from lib/db dir (createRequire from lib/db/package.json). bash tool has env secrets, code_execution sandbox does NOT.
+- [Paystack webhook security](paystack-webhook-security.md) — Webhook must check amount+currency against stored row, not just HMAC. Renewal branch (no txn row) must also gate on PREMIUM_AMOUNT_KOBO+CURRENCY. effectivePeriodEnd helper prevents stale past period on re-subscribe.
