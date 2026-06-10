@@ -22,15 +22,21 @@ import type {
 import type {
   ActivityItem,
   DashboardSummary,
+  ExportAccess,
   FormattingJob,
   FormattingJobInput,
   FormattingJobUpdate,
   HealthStatus,
   Manuscript,
   ManuscriptInput,
+  PaymentCheckout,
+  PaymentCheckoutInput,
+  PaymentVerification,
   ReadinessReport,
+  SubscriptionStatus,
   UploadUrlRequest,
-  UploadUrlResponse
+  UploadUrlResponse,
+  VerifyPaymentParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1087,4 +1093,383 @@ export function useGetRecentActivity<TData = Awaited<ReturnType<typeof getRecent
 
 
 
+
+export const getCreateCheckoutUrl = () => {
+
+
+
+
+  return `/api/payments/checkout`
+}
+
+/**
+ * @summary Initialize a payment and get a checkout URL
+ */
+export const createCheckout = async (paymentCheckoutInput: PaymentCheckoutInput, options?: RequestInit): Promise<PaymentCheckout> => {
+
+  return customFetch<PaymentCheckout>(getCreateCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      paymentCheckoutInput,)
+  }
+);}
+
+
+
+
+export const getCreateCheckoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckout>>, TError,{data: BodyType<PaymentCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCheckout>>, TError,{data: BodyType<PaymentCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCheckout>>, {data: BodyType<PaymentCheckoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createCheckout>>>
+    export type CreateCheckoutMutationBody = BodyType<PaymentCheckoutInput>
+    export type CreateCheckoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Initialize a payment and get a checkout URL
+ */
+export const useCreateCheckout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckout>>, TError,{data: BodyType<PaymentCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCheckout>>,
+        TError,
+        {data: BodyType<PaymentCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCheckoutMutationOptions(options));
+    }
+
+export const getVerifyPaymentUrl = (params: VerifyPaymentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/payments/verify?${stringifiedParams}` : `/api/payments/verify`
+}
+
+/**
+ * @summary Verify a payment by reference after checkout
+ */
+export const verifyPayment = async (params: VerifyPaymentParams, options?: RequestInit): Promise<PaymentVerification> => {
+
+  return customFetch<PaymentVerification>(getVerifyPaymentUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getVerifyPaymentQueryKey = (params?: VerifyPaymentParams,) => {
+    return [
+    `/api/payments/verify`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getVerifyPaymentQueryOptions = <TData = Awaited<ReturnType<typeof verifyPayment>>, TError = ErrorType<void>>(params: VerifyPaymentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof verifyPayment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getVerifyPaymentQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof verifyPayment>>> = ({ signal }) => verifyPayment(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof verifyPayment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type VerifyPaymentQueryResult = NonNullable<Awaited<ReturnType<typeof verifyPayment>>>
+export type VerifyPaymentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Verify a payment by reference after checkout
+ */
+
+export function useVerifyPayment<TData = Awaited<ReturnType<typeof verifyPayment>>, TError = ErrorType<void>>(
+ params: VerifyPaymentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof verifyPayment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getVerifyPaymentQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetExportAccessUrl = (jobId: number,) => {
+
+
+
+
+  return `/api/payments/export-access/${jobId}`
+}
+
+/**
+ * @summary Whether the user can download clean (non-watermarked) exports for a job
+ */
+export const getExportAccess = async (jobId: number, options?: RequestInit): Promise<ExportAccess> => {
+
+  return customFetch<ExportAccess>(getGetExportAccessUrl(jobId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetExportAccessQueryKey = (jobId: number,) => {
+    return [
+    `/api/payments/export-access/${jobId}`
+    ] as const;
+    }
+
+
+export const getGetExportAccessQueryOptions = <TData = Awaited<ReturnType<typeof getExportAccess>>, TError = ErrorType<unknown>>(jobId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExportAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExportAccessQueryKey(jobId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExportAccess>>> = ({ signal }) => getExportAccess(jobId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(jobId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExportAccess>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetExportAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getExportAccess>>>
+export type GetExportAccessQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether the user can download clean (non-watermarked) exports for a job
+ */
+
+export function useGetExportAccess<TData = Awaited<ReturnType<typeof getExportAccess>>, TError = ErrorType<unknown>>(
+ jobId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExportAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetExportAccessQueryOptions(jobId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSubscriptionUrl = () => {
+
+
+
+
+  return `/api/subscription`
+}
+
+/**
+ * @summary Get the current user's subscription status
+ */
+export const getSubscription = async ( options?: RequestInit): Promise<SubscriptionStatus> => {
+
+  return customFetch<SubscriptionStatus>(getGetSubscriptionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSubscriptionQueryKey = () => {
+    return [
+    `/api/subscription`
+    ] as const;
+    }
+
+
+export const getGetSubscriptionQueryOptions = <TData = Awaited<ReturnType<typeof getSubscription>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSubscription>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSubscriptionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscription>>> = ({ signal }) => getSubscription({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSubscription>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSubscriptionQueryResult = NonNullable<Awaited<ReturnType<typeof getSubscription>>>
+export type GetSubscriptionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current user's subscription status
+ */
+
+export function useGetSubscription<TData = Awaited<ReturnType<typeof getSubscription>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSubscription>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSubscriptionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCancelSubscriptionUrl = () => {
+
+
+
+
+  return `/api/subscription/cancel`
+}
+
+/**
+ * @summary Cancel the current user's premium subscription
+ */
+export const cancelSubscription = async ( options?: RequestInit): Promise<SubscriptionStatus> => {
+
+  return customFetch<SubscriptionStatus>(getCancelSubscriptionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCancelSubscriptionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelSubscription>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelSubscription>>, TError,void, TContext> => {
+
+const mutationKey = ['cancelSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelSubscription>>, void> = () => {
+
+
+          return  cancelSubscription(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof cancelSubscription>>>
+
+    export type CancelSubscriptionMutationError = ErrorType<void>
+
+    /**
+ * @summary Cancel the current user's premium subscription
+ */
+export const useCancelSubscription = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelSubscription>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelSubscription>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCancelSubscriptionMutationOptions(options));
+    }
 

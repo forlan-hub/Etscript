@@ -315,3 +315,65 @@ export const GetRecentActivityResponseItem = zod.object({
 export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem)
 
 
+/**
+ * @summary Initialize a payment and get a checkout URL
+ */
+export const CreateCheckoutBody = zod.object({
+  "type": zod.enum(['payg_export', 'premium_subscription']),
+  "jobId": zod.number().nullish()
+})
+
+export const CreateCheckoutResponse = zod.object({
+  "authorizationUrl": zod.string(),
+  "reference": zod.string()
+})
+
+
+/**
+ * @summary Verify a payment by reference after checkout
+ */
+export const VerifyPaymentQueryParams = zod.object({
+  "reference": zod.coerce.string()
+})
+
+export const VerifyPaymentResponse = zod.object({
+  "status": zod.enum(['success', 'pending', 'failed']),
+  "type": zod.enum(['payg_export', 'premium_subscription']),
+  "jobId": zod.number().nullish()
+})
+
+
+/**
+ * @summary Whether the user can download clean (non-watermarked) exports for a job
+ */
+export const GetExportAccessParams = zod.object({
+  "jobId": zod.coerce.number()
+})
+
+export const GetExportAccessResponse = zod.object({
+  "canDownloadClean": zod.boolean(),
+  "plan": zod.enum(['free', 'premium']),
+  "jobPaid": zod.boolean()
+})
+
+
+/**
+ * @summary Get the current user's subscription status
+ */
+export const GetSubscriptionResponse = zod.object({
+  "plan": zod.enum(['free', 'premium']),
+  "status": zod.string().nullable(),
+  "currentPeriodEnd": zod.string().nullish()
+})
+
+
+/**
+ * @summary Cancel the current user's premium subscription
+ */
+export const CancelSubscriptionResponse = zod.object({
+  "plan": zod.enum(['free', 'premium']),
+  "status": zod.string().nullable(),
+  "currentPeriodEnd": zod.string().nullish()
+})
+
+

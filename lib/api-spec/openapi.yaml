@@ -16,6 +16,10 @@ tags:
     description: Formatting jobs
   - name: dashboard
     description: Dashboard and summary data
+  - name: payments
+    description: Payment checkout and verification
+  - name: subscription
+    description: Subscription status and management
 
 paths:
   /healthz:
@@ -265,6 +269,97 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /payments/checkout:
+    post:
+      operationId: createCheckout
+      tags: [payments]
+      summary: Initialize a payment and get a checkout URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentCheckoutInput"
+      responses:
+        "200":
+          description: Checkout initialized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentCheckout"
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+
+  /payments/verify:
+    get:
+      operationId: verifyPayment
+      tags: [payments]
+      summary: Verify a payment by reference after checkout
+      parameters:
+        - name: reference
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVerification"
+        "404":
+          description: Transaction not found
+
+  /payments/export-access/{jobId}:
+    get:
+      operationId: getExportAccess
+      tags: [payments]
+      summary: Whether the user can download clean (non-watermarked) exports for a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Export access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportAccess"
+
+  /subscription:
+    get:
+      operationId: getSubscription
+      tags: [subscription]
+      summary: Get the current user's subscription status
+      responses:
+        "200":
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+
+  /subscription/cancel:
+    post:
+      operationId: cancelSubscription
+      tags: [subscription]
+      summary: Cancel the current user's premium subscription
+      responses:
+        "200":
+          description: Updated subscription status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+        "404":
+          description: No active subscription
+
 components:
   schemas:
     HealthStatus:
@@ -462,3 +557,59 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+
+    PaymentCheckoutInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [payg_export, premium_subscription]
+        jobId:
+          type: ["integer", "null"]
+
+    PaymentCheckout:
+      type: object
+      required: [authorizationUrl, reference]
+      properties:
+        authorizationUrl:
+          type: string
+        reference:
+          type: string
+
+    PaymentVerification:
+      type: object
+      required: [status, type]
+      properties:
+        status:
+          type: string
+          enum: [success, pending, failed]
+        type:
+          type: string
+          enum: [payg_export, premium_subscription]
+        jobId:
+          type: ["integer", "null"]
+
+    ExportAccess:
+      type: object
+      required: [canDownloadClean, plan, jobPaid]
+      properties:
+        canDownloadClean:
+          type: boolean
+        plan:
+          type: string
+          enum: [free, premium]
+        jobPaid:
+          type: boolean
+
+    SubscriptionStatus:
+      type: object
+      required: [plan, status]
+      properties:
+        plan:
+          type: string
+          enum: [free, premium]
+        status:
+          type: ["string", "null"]
+        currentPeriodEnd:
+          type: ["string", "null"]

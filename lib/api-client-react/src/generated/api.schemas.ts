@@ -234,3 +234,80 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export type PaymentCheckoutInputType = typeof PaymentCheckoutInputType[keyof typeof PaymentCheckoutInputType];
+
+
+export const PaymentCheckoutInputType = {
+  payg_export: 'payg_export',
+  premium_subscription: 'premium_subscription',
+} as const;
+
+export interface PaymentCheckoutInput {
+  type: PaymentCheckoutInputType;
+  /** @nullable */
+  jobId?: number | null;
+}
+
+export interface PaymentCheckout {
+  authorizationUrl: string;
+  reference: string;
+}
+
+export type PaymentVerificationStatus = typeof PaymentVerificationStatus[keyof typeof PaymentVerificationStatus];
+
+
+export const PaymentVerificationStatus = {
+  success: 'success',
+  pending: 'pending',
+  failed: 'failed',
+} as const;
+
+export type PaymentVerificationType = typeof PaymentVerificationType[keyof typeof PaymentVerificationType];
+
+
+export const PaymentVerificationType = {
+  payg_export: 'payg_export',
+  premium_subscription: 'premium_subscription',
+} as const;
+
+export interface PaymentVerification {
+  status: PaymentVerificationStatus;
+  type: PaymentVerificationType;
+  /** @nullable */
+  jobId?: number | null;
+}
+
+export type ExportAccessPlan = typeof ExportAccessPlan[keyof typeof ExportAccessPlan];
+
+
+export const ExportAccessPlan = {
+  free: 'free',
+  premium: 'premium',
+} as const;
+
+export interface ExportAccess {
+  canDownloadClean: boolean;
+  plan: ExportAccessPlan;
+  jobPaid: boolean;
+}
+
+export type SubscriptionStatusPlan = typeof SubscriptionStatusPlan[keyof typeof SubscriptionStatusPlan];
+
+
+export const SubscriptionStatusPlan = {
+  free: 'free',
+  premium: 'premium',
+} as const;
+
+export interface SubscriptionStatus {
+  plan: SubscriptionStatusPlan;
+  /** @nullable */
+  status: string | null;
+  /** @nullable */
+  currentPeriodEnd?: string | null;
+}
+
+export type VerifyPaymentParams = {
+reference: string;
+};
+
