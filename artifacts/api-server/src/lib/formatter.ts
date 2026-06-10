@@ -13,9 +13,8 @@ import {
   convertInchesToTwip,
   PageBreak,
 } from "docx";
-import fs from "fs";
 import mammoth from "mammoth";
-import { outputFileKey, resolveUploadPath, fileExists } from "./fileStorage";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 type JobOptions = {
   id: number;
@@ -45,7 +44,7 @@ export type FormattedResult = {
   wordCount: number;
 };
 
-/** Thrown when a manuscript references an uploaded file that is gone from disk. */
+/** Thrown when a manuscript references an uploaded file that is gone from storage. */
 export class MissingUploadError extends Error {
   override readonly name = "MissingUploadError";
   constructor() {
@@ -66,24 +65,36 @@ const SAMPLE_PARAGRAPHS = [
   "The journey back would take three days if the roads were good. They had not been good in years. He packed only what he could carry, which turned out to be far less than he had imagined, and far more than he needed.",
 ];
 
-async function extractText(fileKey: string, filename: string): Promise<string> {
-  const filePath = resolveUploadPath(fileKey);
-  if (!fileExists(filePath)) {
-    return "";
-  }
+function outputFileKey(jobId: number, format: "pdf" | "docx"): string {
+  return `jobs/${jobId}/formatted.${format}`;
+}
 
+async function extractTextFromBuffer(buffer: Buffer, filename: string): Promise<string> {
   const ext = (filename ?? "").toLowerCase().split(".").pop();
 
   if (ext === "txt") {
-    return fs.readFileSync(filePath, "utf-8");
+    return buffer.toString("utf-8");
   }
 
   if (ext === "docx") {
-    const result = await mammoth.extractRawText({ path: filePath });
+    const result = await mammoth.extractRawText({ buffer });
     return result.value;
   }
 
   return "";
+}
+
+async function downloadManuscriptBuffer(fileKey: string): Promise<Buffer> {
+  const service = new ObjectStorageService();
+  let objectFile;
+  try {
+    objectFile = await service.getObjectEntityFile(fileKey);
+  } catch (err) {
+    if (err instanceof ObjectNotFoundError) throw new MissingUploadError();
+    throw err;
+  }
+  const [contents] = await objectFile.download();
+  return contents;
 }
 
 function parseChapters(text: string, title: string): Chapter[] {
@@ -350,7 +361,6 @@ async function generatePdfBuffer(
     doc.switchToPage(i);
 
     if (watermark) {
-      // Diagonal translucent stamp across the whole page.
       doc.save();
       doc.rotate(-45, { origin: [width / 2, height / 2] });
       doc
@@ -364,7 +374,6 @@ async function generatePdfBuffer(
         });
       doc.restore();
 
-      // Footer notice repeated on every page.
       doc.save();
       doc
         .font(bodyFont)
@@ -414,7 +423,7 @@ async function generateDocxBuffer(
   chapters: Chapter[],
   watermark: boolean,
 ): Promise<Buffer> {
-  const fontSize = (job.fontSize ?? 12) * 2; // docx uses half-points
+  const fontSize = (job.fontSize ?? 12) * 2;
   const margin = resolveMargin(job.marginSize);
   const marginTwips = Math.round((margin / 72) * 1440);
   const pageNumPos = job.pageNumberPosition ?? "bottom_center";
@@ -622,15 +631,19 @@ export async function generateFormattedFiles(
   let rawText = "";
 
   if (manuscript.fileKey && manuscript.originalFilename) {
-    rawText = await extractText(manuscript.fileKey, manuscript.originalFilename);
+    try {
+      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
+    } catch (err) {
+      if (!(err instanceof MissingUploadError)) throw err;
+      // File not yet in GCS (e.g. upload incomplete) — fall through to sample content.
+    }
   }
 
   const wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
   const chapters = parseChapters(rawText, manuscript.title);
   const previewHtml = buildPreviewHtml(manuscript, chapters, job);
 
-  // Output files are regenerated on demand at download time (autoscale uses an
-  // ephemeral disk), so processing only produces the preview and metadata.
   return {
     pdfKey: outputFileKey(job.id, "pdf"),
     docxKey: outputFileKey(job.id, "docx"),
@@ -650,11 +663,8 @@ export async function generateDocumentBuffer(
   let rawText = "";
 
   if (manuscript.fileKey) {
-    const filePath = resolveUploadPath(manuscript.fileKey);
-    if (!fileExists(filePath)) {
-      throw new MissingUploadError();
-    }
-    rawText = await extractText(manuscript.fileKey, manuscript.originalFilename ?? "");
+    const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+    rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename ?? "");
   }
 
   const chapters = parseChapters(rawText, manuscript.title);
