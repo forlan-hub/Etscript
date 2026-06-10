@@ -46,6 +46,8 @@ export interface ManuscriptInput {
 export interface UploadUrlRequest {
   filename: string;
   contentType: string;
+  /** @minimum 1 */
+  fileSize?: number;
 }
 
 export interface UploadUrlResponse {
@@ -305,6 +307,25 @@ export interface SubscriptionStatus {
   status: string | null;
   /** @nullable */
   currentPeriodEnd?: string | null;
+}
+
+export interface StorageUploadRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface StorageUploadResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: StorageUploadRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
 }
 
 export type VerifyPaymentParams = {

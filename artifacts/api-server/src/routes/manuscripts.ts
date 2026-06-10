@@ -1,6 +1,4 @@
-import { Router, type Request } from "express";
-import multer from "multer";
-import path from "path";
+import { Router } from "express";
 import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import { manuscriptsTable, activityLogTable } from "@workspace/db";
@@ -12,34 +10,10 @@ import {
   GetUploadUrlParams,
   GetUploadUrlBody,
 } from "@workspace/api-zod";
-import { getUploadDir } from "../lib/fileStorage";
-
-type MulterRequest = Request & { file?: Express.Multer.File };
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req: Request, _file: Express.Multer.File, cb: (err: Error | null, dest: string) => void) => {
-      const userId = getUserId(req);
-      const manuscriptId = Number(req.params.id);
-      const dir = getUploadDir(userId, manuscriptId);
-      cb(null, dir);
-    },
-    filename: (_req: Request, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
-      cb(null, file.originalname);
-    },
-  }),
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === ".docx" || ext === ".txt") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only .docx and .txt files are supported"));
-    }
-  },
-});
+const objectStorageService = new ObjectStorageService();
 
 router.get("/manuscripts", requireAuth, async (req, res): Promise<void> => {
   const userId = getUserId(req);
@@ -127,57 +101,24 @@ router.post("/manuscripts/:id/upload-url", requireAuth, async (req, res): Promis
     return;
   }
 
-  const fileKey = `manuscripts/${userId}/${idParsed.data.id}/${bodyParsed.data.filename}`;
+  const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+  const fileKey = objectStorageService.normalizeObjectEntityPath(uploadUrl);
+
+  const fileSize = bodyParsed.data.fileSize;
+  const wordCount = fileSize ? Math.round(fileSize / 5) : undefined;
+
   await db
     .update(manuscriptsTable)
-    .set({ fileKey, originalFilename: bodyParsed.data.filename, updatedAt: new Date() })
+    .set({
+      fileKey,
+      originalFilename: bodyParsed.data.filename,
+      ...(fileSize !== undefined ? { fileSize } : {}),
+      ...(wordCount !== undefined ? { wordCount } : {}),
+      updatedAt: new Date(),
+    })
     .where(eq(manuscriptsTable.id, idParsed.data.id));
 
-  res.json({ uploadUrl: `/api/manuscripts/${idParsed.data.id}/upload-file`, fileKey });
+  res.json({ uploadUrl, fileKey });
 });
-
-router.post(
-  "/manuscripts/:id/upload-file",
-  requireAuth,
-  upload.single("file"),
-  async (req: MulterRequest, res): Promise<void> => {
-    const userId = getUserId(req);
-    const idParsed = GetManuscriptParams.safeParse({ id: Number(req.params.id) });
-    if (!idParsed.success) {
-      res.status(400).json({ error: "Invalid id" });
-      return;
-    }
-    if (!req.file) {
-      res.status(400).json({ error: "No file uploaded" });
-      return;
-    }
-
-    const [manuscript] = await db
-      .select()
-      .from(manuscriptsTable)
-      .where(and(eq(manuscriptsTable.id, idParsed.data.id), eq(manuscriptsTable.userId, userId)));
-    if (!manuscript) {
-      res.status(404).json({ error: "Not found" });
-      return;
-    }
-
-    const fileKey = `manuscripts/${userId}/${idParsed.data.id}/${req.file.originalname}`;
-    const wordCount = Math.round(req.file.size / 5);
-
-    const [updated] = await db
-      .update(manuscriptsTable)
-      .set({
-        fileKey,
-        originalFilename: req.file.originalname,
-        fileSize: req.file.size,
-        wordCount,
-        updatedAt: new Date(),
-      })
-      .where(eq(manuscriptsTable.id, idParsed.data.id))
-      .returning();
-
-    res.json(updated);
-  },
-);
 
 export default router;

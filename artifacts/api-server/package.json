@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.21.0",
     "@supabase/supabase-js": "^2.49.4",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
@@ -18,6 +19,7 @@
     "docx": "^9.7.1",
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
+    "google-auth-library": "^10.7.0",
     "mammoth": "^1.12.0",
     "multer": "^2.1.1",
     "pdfkit": "^0.19.0",

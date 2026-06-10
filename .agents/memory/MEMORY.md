@@ -3,3 +3,4 @@
 - [Lib stale declarations](lib-stale-declarations.md) — After adding new schema files to lib/db, run typecheck:libs before checking artifact packages or you get "no exported member" errors.
 - [Paystack e2e quirks](paystack-e2e-quirks.md) — Paystack rejects .test TLD emails; use @gmail.com. pg only resolvable from lib/db dir (createRequire from lib/db/package.json). bash tool has env secrets, code_execution sandbox does NOT.
 - [Paystack webhook security](paystack-webhook-security.md) — Webhook must check amount+currency against stored row, not just HMAC. Renewal branch (no txn row) must also gate on PREMIUM_AMOUNT_KOBO+CURRENCY. effectivePeriodEnd helper prevents stale past period on re-subscribe.
+- [Object storage setup](object-storage-setup.md) — GCS bucket provisioned; manuscript fileKey is now a /objects/ path; upload is PUT directly to GCS presigned URL.

@@ -6,9 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UploadUrlRequest {
-  filename: string;
-  contentType: string;
-  /** @minimum 1 */
-  fileSize?: number;
+export interface ErrorEnvelope {
+  error: string;
 }

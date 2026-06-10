@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UploadUrlRequest {
-  filename: string;
-  contentType: string;
+export interface StorageUploadRequest {
+  /** @minLength 1 */
+  name: string;
   /** @minimum 1 */
-  fileSize?: number;
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
 }

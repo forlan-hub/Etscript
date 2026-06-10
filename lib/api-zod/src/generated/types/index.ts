@@ -9,6 +9,7 @@
 export * from './activityItem';
 export * from './activityItemType';
 export * from './dashboardSummary';
+export * from './errorEnvelope';
 export * from './exportAccess';
 export * from './exportAccessPlan';
 export * from './formattingJob';
@@ -33,6 +34,8 @@ export * from './paymentVerificationType';
 export * from './readinessItem';
 export * from './readinessItemSeverity';
 export * from './readinessReport';
+export * from './storageUploadRequest';
+export * from './storageUploadResponse';
 export * from './subscriptionStatus';
 export * from './subscriptionStatusPlan';
 export * from './uploadUrlRequest';

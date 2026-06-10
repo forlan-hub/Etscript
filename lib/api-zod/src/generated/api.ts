@@ -83,9 +83,13 @@ export const GetUploadUrlParams = zod.object({
   "id": zod.coerce.number()
 })
 
+
+
+
 export const GetUploadUrlBody = zod.object({
   "filename": zod.string(),
-  "contentType": zod.string()
+  "contentType": zod.string(),
+  "fileSize": zod.number().min(1).optional()
 })
 
 export const GetUploadUrlResponse = zod.object({
@@ -374,6 +378,52 @@ export const CancelSubscriptionResponse = zod.object({
   "plan": zod.enum(['free', 'premium']),
   "status": zod.string().nullable(),
   "currentPeriodEnd": zod.string().nullish()
+})
+
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+}).optional()
+})
+
+
+/**
+ * @summary Serve a public asset from object storage
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+
+/**
+ * @summary Serve an uploaded object from private storage
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
 })
 
 

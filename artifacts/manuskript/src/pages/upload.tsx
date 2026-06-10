@@ -9,11 +9,9 @@ import { useLocation } from "wouter";
 import { useCreateManuscript, useCreateJob, useGetUploadUrl } from "@workspace/api-client-react";
 import { UploadCloud, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth-context";
 
 export default function UploadPage() {
   const [, setLocation] = useLocation();
-  const { session } = useAuth();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -77,19 +75,20 @@ export default function UploadPage() {
 
       const uploadInfo = await getUploadUrl.mutateAsync({
         id: manuscript.id,
-        data: { filename: file.name, contentType: file.type || "application/octet-stream" },
+        data: {
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        },
       });
       setUploadProgress(35);
 
       setStep("uploading");
-      const formData = new FormData();
-      formData.append("file", file);
 
-      const token = session?.access_token;
       const response = await fetch(uploadInfo.uploadUrl, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
       });
 
       if (!response.ok) {
@@ -188,7 +187,7 @@ export default function UploadPage() {
                     )}
                     <span>
                       {step === "creating" && "Creating manuscript record…"}
-                      {step === "uploading" && "Uploading file…"}
+                      {step === "uploading" && "Uploading file to storage…"}
                       {step === "done" && "Done! Redirecting…"}
                     </span>
                   </div>
