@@ -9,7 +9,8 @@ import {
   VerifyPaymentResponse,
   GetExportAccessResponse,
 } from "@workspace/api-zod";
-import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
+import { requireAuth, getUserId, supabaseAdmin } from "../middlewares/supabaseAuth";
+import { sendReceipt } from "../lib/email";
 import { getProvider, amountForType, CURRENCY, PREMIUM_AMOUNT_KOBO } from "../lib/payments";
 import { getCleanAccess, isPremium } from "../lib/entitlements";
 import {
@@ -54,6 +55,25 @@ function extractWebhookPlanCode(data: Record<string, unknown>): string | undefin
     return planObject.plan_code;
   }
   return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve a user's email: prefer the value from the Paystack payload (already
+ *  verified by Paystack), fall back to the Supabase auth record. */
+async function resolveUserEmail(
+  userId: string,
+  paystackEmail?: string,
+): Promise<string | undefined> {
+  if (paystackEmail) return paystackEmail;
+  try {
+    const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+    return data?.user?.email ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +267,10 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       const customerCode = customer?.customer_code;
       const amount = typeof data.amount === "number" ? data.amount : undefined;
       const currency = typeof data.currency === "string" ? data.currency : undefined;
+      const customerEmail =
+        typeof (data.customer as Record<string, unknown> | undefined)?.email === "string"
+          ? (data.customer as Record<string, unknown>).email as string
+          : undefined;
       const txn = reference ? await getTransactionByReference(reference) : null;
 
       if (txn && reference) {
@@ -266,6 +290,28 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
           if (txn.type === "premium_subscription") {
             await activateSubscriptionForUser(txn.userId, { customerCode, planCode });
           }
+
+          // Send receipt — resolve email from Paystack payload or Supabase
+          const receiptEmail = await resolveUserEmail(txn.userId, customerEmail);
+          if (receiptEmail) {
+            let manuscriptTitle: string | null = null;
+            if (txn.type === "payg_export" && txn.jobId) {
+              const [row] = await db
+                .select({ title: manuscriptsTable.title })
+                .from(formattingJobsTable)
+                .innerJoin(manuscriptsTable, eq(formattingJobsTable.manuscriptId, manuscriptsTable.id))
+                .where(eq(formattingJobsTable.id, txn.jobId));
+              manuscriptTitle = row?.title ?? null;
+            }
+            sendReceipt({
+              to: receiptEmail,
+              type: txn.type as "payg_export" | "premium_subscription",
+              amountKobo: txn.amount,
+              manuscriptTitle,
+            }).catch((err: unknown) =>
+              req.log.error({ err: String(err) }, "receipt email failed"),
+            );
+          }
         }
       } else if (
         customerCode &&
@@ -276,6 +322,17 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
         // Recurring renewal charge (no matching initiating transaction row);
         // only extend when the charge matches the premium plan price.
         await handleRenewalByCustomer(customerCode);
+
+        // Send renewal receipt using the email from the Paystack payload
+        if (customerEmail) {
+          sendReceipt({
+            to: customerEmail,
+            type: "renewal",
+            amountKobo: PREMIUM_AMOUNT_KOBO,
+          }).catch((err: unknown) =>
+            req.log.error({ err: String(err) }, "renewal receipt email failed"),
+          );
+        }
       }
     } else if (eventType === "subscription.create") {
       const customerCode = customer?.customer_code;
