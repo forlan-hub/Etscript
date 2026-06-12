@@ -1,0 +1,344 @@
+ETSCRIPT PRD ADDENDUM (VERSION 1.1)
+PURPOSE
+This addendum supersedes conflicting requirements in Version 1.0 and introduces additional functional, security, usability, and formatting requirements discovered during MVP testing.
+
+21. CONTENT SEPARATION PRINCIPLE (MANDATORY)
+Objective
+Prevent duplication of titles, chapter headings, author names, and manuscript content across all templates.
+
+Rule
+Templates SHALL style content.
+
+Templates SHALL NOT generate content that already exists within the manuscript.
+
+Examples
+Allowed:
+
+Apply chapter styling
+
+Apply title styling
+
+Apply typography
+
+Apply spacing
+
+Apply margins
+
+Not Allowed:
+
+Generate duplicate title pages
+
+Generate duplicate chapter headings
+
+Generate duplicate author names
+
+Requirement
+All content shall originate from:
+
+Manuscript Layer
+or
+
+User Metadata Layer
+Templates shall only affect presentation.
+
+22. THREE-LAYER DOCUMENT ARCHITECTURE
+The platform shall separate formatting into three layers.
+
+Layer 1: Manuscript Layer
+Contains:
+
+Title
+
+Author
+
+Chapters
+
+Sections
+
+Paragraphs
+
+Images
+
+Layer 2: Structure Detection Layer
+Automatically identifies:
+
+Title Pages
+
+Author Names
+
+Chapter Headings
+
+Subheadings
+
+Front Matter
+
+Back Matter
+
+Layer 3: Template Layer
+Responsible only for:
+
+Typography
+
+Layout
+
+Margins
+
+Page Numbering
+
+Header/Footer Design
+
+Theme Styling
+
+23. STRUCTURE DETECTION ENGINE
+Before formatting begins, the platform shall analyze manuscripts and detect:
+
+Existing title pages
+
+Existing chapter headings
+
+Existing section headings
+
+Existing author information
+
+Objective
+Prevent duplicate generation.
+
+Example
+If manuscript contains:
+
+CHAPTER ONE
+
+The system shall style the heading.
+
+The system shall not generate:
+
+Chapter 1
+
+above it.
+
+24. REVIEW & EDIT WORKSPACE
+A Review & Edit Workspace shall exist before formatting.
+
+Workflow:
+
+Upload
+→ Structure Detection
+→ Review & Edit
+→ Formatting
+→ Preview
+→ Export
+
+Supported Editing Functions
+Users may:
+
+Add text
+
+Delete text
+
+Edit text
+
+Rename chapters
+
+Rename headings
+
+Insert page breaks
+
+Insert chapter breaks
+
+Move paragraphs
+
+Reorder sections
+
+Text Formatting
+Supported:
+
+Bold
+
+Italic
+
+Underline
+
+Alignment Controls
+Supported:
+
+Left
+
+Center
+
+Right
+
+Justify
+
+Lists
+Supported:
+
+Bulleted Lists
+
+Numbered Lists
+
+25. MANUSCRIPT STRUCTURE PANEL
+A collapsible manuscript structure panel shall be available.
+
+Example:
+
+Title Page
+
+Chapter One
+
+Chapter Two
+
+Chapter Three
+
+About Author
+
+User Actions
+Users may:
+
+Navigate to sections
+
+Rename sections
+
+Reorder sections
+
+Delete sections
+
+26. NAVIGATION WIZARD
+All workflow steps shall remain accessible.
+
+Workflow
+1 Upload Manuscript
+
+2 Review & Edit
+
+3 Book Type
+
+4 Publishing Target
+
+5 Design Theme
+
+6 Preview
+
+7 Export
+
+Navigation Rules
+Users may return to any completed step without losing progress.
+
+Previous and Next buttons shall exist on all workflow pages.
+
+27. SESSION MANAGEMENT
+Sessions shall automatically expire after 30 minutes of inactivity.
+
+Warning Message
+Display:
+
+"Your session will expire in 2 minutes."
+
+Options:
+
+Stay Signed In
+
+Log Out
+
+No advanced device management requirements are necessary for MVP.
+
+28. WATERMARK IMPLEMENTATION
+Watermarks shall never be inserted into manuscript content.
+
+Free Plan
+Watermark shall appear only within footer regions.
+
+Example:
+
+Generated with Etscript Free
+
+Premium Plan
+Users may disable attribution.
+
+Prohibited Watermark Locations
+Title Pages
+
+Chapter Headings
+
+Author Pages
+
+Body Content
+
+29. TITLE PAGE MANAGEMENT
+The system shall detect existing title pages.
+
+If Existing Title Page Found
+Default behavior:
+
+Use existing title page.
+
+Do not generate another.
+
+Optional Override
+Users may choose:
+
+Use Existing Title Page
+
+Generate New Title Page
+
+30. CHAPTER HEADING MANAGEMENT
+The system shall detect chapter headings.
+
+Supported Formats
+Chapter One
+
+CHAPTER ONE
+
+Chapter 1
+
+CHAPTER 1
+
+Chapter I
+
+Requirement
+Detected chapter headings shall be styled.
+
+Duplicate chapter headings shall never be generated.
+
+31. TEMPLATE DESIGN RULES
+Templates shall define:
+
+Font Family
+
+Font Size
+
+Margins
+
+Line Spacing
+
+Page Numbering
+
+Chapter Appearance
+
+Heading Appearance
+
+Templates shall not define:
+
+Chapter Names
+
+Author Names
+
+Book Titles
+
+These belong to manuscript content.
+
+32. TEMPLATE PREVIEW COMPARISON
+Existing comparison functionality shall remain.
+
+Users shall be able to compare:
+
+Classic Theme
+
+Modern Theme
+
+Premium Theme
+
+Corporate Theme
+
+Academic Theme
+
+using the same manuscript.
