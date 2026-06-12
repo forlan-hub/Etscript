@@ -34,6 +34,7 @@ export interface FormattingJob {
   pageNumberPosition?: FormattingJobPageNumberPosition;
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
+  showBranding?: boolean;
   status: FormattingJobStatus;
   /** @nullable */
   outputPdfKey?: string | null;

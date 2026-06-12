@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { manuscriptsTable } from "./manuscripts";
@@ -18,6 +18,7 @@ export const formattingJobsTable = pgTable("formatting_jobs", {
   marginSize: text("margin_size"),
   pageNumberPosition: text("page_number_position"),
   chapterNumberStyle: text("chapter_number_style"),
+  showBranding: boolean("show_branding").notNull().default(true),
   status: text("status").notNull().default("draft"),
   outputPdfKey: text("output_pdf_key"),
   outputDocxKey: text("output_docx_key"),

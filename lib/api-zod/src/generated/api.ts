@@ -101,6 +101,8 @@ export const GetUploadUrlResponse = zod.object({
 /**
  * @summary List all formatting jobs for user
  */
+export const listJobsResponseShowBrandingDefault = true;
+
 export const ListJobsResponseItem = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
@@ -113,6 +115,7 @@ export const ListJobsResponseItem = zod.object({
   "marginSize": zod.string().nullish(),
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
+  "showBranding": zod.boolean().default(listJobsResponseShowBrandingDefault),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -153,6 +156,8 @@ export const GetJobParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getJobResponseShowBrandingDefault = true;
+
 export const GetJobResponse = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
@@ -165,6 +170,7 @@ export const GetJobResponse = zod.object({
   "marginSize": zod.string().nullish(),
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
+  "showBranding": zod.boolean().default(getJobResponseShowBrandingDefault),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -202,8 +208,11 @@ export const UpdateJobBody = zod.object({
   "lineSpacing": zod.string().optional(),
   "marginSize": zod.string().optional(),
   "pageNumberPosition": zod.string().optional(),
-  "chapterNumberStyle": zod.string().optional()
+  "chapterNumberStyle": zod.string().optional(),
+  "showBranding": zod.boolean().optional()
 })
+
+export const updateJobResponseShowBrandingDefault = true;
 
 export const UpdateJobResponse = zod.object({
   "id": zod.number(),
@@ -217,6 +226,7 @@ export const UpdateJobResponse = zod.object({
   "marginSize": zod.string().nullish(),
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
+  "showBranding": zod.boolean().default(updateJobResponseShowBrandingDefault),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -245,6 +255,8 @@ export const ProcessJobParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const processJobResponseShowBrandingDefault = true;
+
 export const ProcessJobResponse = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
@@ -257,6 +269,7 @@ export const ProcessJobResponse = zod.object({
   "marginSize": zod.string().nullish(),
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
+  "showBranding": zod.boolean().default(processJobResponseShowBrandingDefault),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),

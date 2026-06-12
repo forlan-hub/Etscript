@@ -161,6 +161,7 @@ export interface FormattingJob {
   pageNumberPosition?: FormattingJobPageNumberPosition;
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
+  showBranding?: boolean;
   status: FormattingJobStatus;
   /** @nullable */
   outputPdfKey?: string | null;
@@ -190,6 +191,7 @@ export interface FormattingJobUpdate {
   marginSize?: string;
   pageNumberPosition?: string;
   chapterNumberStyle?: string;
+  showBranding?: boolean;
 }
 
 export type ReadinessItemSeverity = typeof ReadinessItemSeverity[keyof typeof ReadinessItemSeverity];

@@ -26,6 +26,7 @@ type JobOptions = {
   marginSize: string | null;
   pageNumberPosition: string | null;
   chapterNumberStyle: string | null;
+  showBranding: boolean | null;
 };
 
 type ManuscriptInfo = {
@@ -365,6 +366,16 @@ async function generatePdfBuffer(
     doc.fillColor("#000000");
   }
 
+  if (job.showBranding !== false) {
+    doc.moveDown(frontMatterParagraphs.length > 0 ? 1 : 2);
+    doc
+      .font(bodyFont)
+      .fontSize(7.5)
+      .fillColor("#c8c8c8")
+      .text("Formatted with Etscript", { align: "center", width: contentWidth });
+    doc.fillColor("#000000");
+  }
+
   // ── Body chapters ────────────────────────────────────────────
   bodyChapters.forEach((chapter, idx) => {
     doc.addPage();
@@ -526,6 +537,16 @@ async function generateDocxBuffer(
     );
   }
 
+  if (job.showBranding !== false) {
+    sectionChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "Formatted with Etscript", size: 16, color: "C8C8C8" })],
+        spacing: { before: frontMatterParagraphs.length > 0 ? 240 : 480 },
+      }),
+    );
+  }
+
   sectionChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
   // Body chapters — use detected heading as-is; only generate a label when
@@ -676,10 +697,16 @@ function buildPreviewHtml(
     )
     .join('<div style="border:none;border-top:1px solid #eee;margin:2em 0"></div>');
 
+  const brandingHtml =
+    job.showBranding !== false
+      ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:0.6em 0 0">Formatted with Etscript</p>`
+      : "";
+
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">
   <h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em">${manuscript.title}</h1>
   ${frontMatterHtml}
+  ${brandingHtml}
   <div style="margin-top:3em">${chaptersHtml}</div>
   ${bodyChapters.length > 2 ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${bodyChapters.length - 2} more chapter(s) in the downloaded files</p>` : ""}
 </div>`;

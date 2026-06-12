@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from "@tanstack/react-query";
 import { WorkflowStepper } from "@/components/workflow-stepper";
 
@@ -28,6 +29,7 @@ export default function CustomizePage() {
   const [marginSize, setMarginSize] = useState("normal");
   const [pageNumberPosition, setPageNumberPosition] = useState("bottom_center");
   const [chapterNumberStyle, setChapterNumberStyle] = useState("arabic");
+  const [showBranding, setShowBranding] = useState(true);
 
   const initializedRef = useRef(false);
 
@@ -39,6 +41,7 @@ export default function CustomizePage() {
       if (job.marginSize) setMarginSize(job.marginSize);
       if (job.pageNumberPosition) setPageNumberPosition(job.pageNumberPosition);
       if (job.chapterNumberStyle) setChapterNumberStyle(job.chapterNumberStyle);
+      setShowBranding(job.showBranding ?? true);
       initializedRef.current = true;
     }
   }, [job]);
@@ -52,7 +55,8 @@ export default function CustomizePage() {
         lineSpacing,
         marginSize,
         pageNumberPosition,
-        chapterNumberStyle
+        chapterNumberStyle,
+        showBranding,
       }
     });
 
@@ -201,6 +205,21 @@ export default function CustomizePage() {
                       </Label>
                     </div>
                   </RadioGroup>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="show-branding" className="cursor-pointer">Attribution badge</Label>
+                    <p className="text-xs text-muted-foreground">Show "Formatted with Etscript" on the title page</p>
+                  </div>
+                  <Switch
+                    id="show-branding"
+                    checked={showBranding}
+                    onCheckedChange={(v) => {
+                      setShowBranding(v);
+                      autoSave({ showBranding: v });
+                    }}
+                  />
                 </div>
               </CardContent>
             </Card>

@@ -543,6 +543,9 @@ components:
         chapterNumberStyle:
           type: ["string", "null"]
           enum: [arabic, roman, words, none, null]
+        showBranding:
+          type: boolean
+          default: true
         status:
           type: string
           enum: [draft, processing, completed, error]
@@ -593,6 +596,8 @@ components:
           type: string
         chapterNumberStyle:
           type: string
+        showBranding:
+          type: boolean
 
     ReadinessItem:
       type: object
