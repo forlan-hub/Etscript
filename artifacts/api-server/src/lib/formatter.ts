@@ -7,7 +7,6 @@ import {
   Packer,
   AlignmentType,
   Footer,
-  Header,
   PageNumber,
   SectionType,
   convertInchesToTwip,
@@ -56,6 +55,49 @@ type Chapter = {
   title: string;
   paragraphs: string[];
 };
+
+/** True when a title string is a recognised chapter/section heading. */
+function isChapterHeading(title: string): boolean {
+  return /^(chapter|part|section|prologue|epilogue|introduction|preface|foreword|afterword)/i.test(
+    title.trim(),
+  );
+}
+
+/**
+ * Splits parsed chapters into:
+ * - frontMatterParagraphs: text that appeared before the first chapter heading
+ *   (author name, subtitle, dedication, etc.) — deduplicated against the title.
+ * - bodyChapters: chapters that start with a recognised heading.
+ *
+ * This prevents the formatter from generating "Chapter 1" labels for content
+ * the author already structured, and avoids duplicating the manuscript title.
+ */
+type DocumentParts = {
+  frontMatterParagraphs: string[];
+  bodyChapters: Chapter[];
+};
+
+function separateDocumentParts(chapters: Chapter[], manuscriptTitle: string): DocumentParts {
+  if (chapters.length === 0) {
+    return { frontMatterParagraphs: [], bodyChapters: [] };
+  }
+
+  const first = chapters[0];
+
+  if (!isChapterHeading(first.title)) {
+    const normalTitle = manuscriptTitle.trim().toLowerCase();
+    const frontMatterParagraphs = first.paragraphs.filter((p) => {
+      const np = p.trim().toLowerCase();
+      return np.length > 0 && np !== normalTitle;
+    });
+    return {
+      frontMatterParagraphs,
+      bodyChapters: chapters.slice(1),
+    };
+  }
+
+  return { frontMatterParagraphs: [], bodyChapters: chapters };
+}
 
 const SAMPLE_PARAGRAPHS = [
   "The morning light filtered through the tall windows of the study, casting long golden bars across the worn oak floor. Dust motes danced in the air, suspended in that particular stillness that precedes great events. Outside, the city was already stirring — the faint clatter of carts on cobblestones, a vendor's distant call — but here, within these four walls lined with books, time moved differently.",
@@ -178,9 +220,7 @@ function resolvePdfFont(fontFamily: string | null): string {
   return "Times-Roman";
 }
 
-function resolvePageSize(
-  publishingTarget: string | null,
-): [number, number] {
+function resolvePageSize(publishingTarget: string | null): [number, number] {
   switch (publishingTarget) {
     case "a4":
     case "a4_print":
@@ -280,7 +320,12 @@ async function generatePdfBuffer(
   const [width, height] = resolvePageSize(job.publishingTarget);
   const margin = resolveMargin(job.marginSize);
   const bodyFont = resolvePdfFont(job.fontFamily);
-  const boldFont = bodyFont === "Times-Roman" ? "Times-Bold" : bodyFont === "Helvetica" ? "Helvetica-Bold" : "Courier-Bold";
+  const boldFont =
+    bodyFont === "Times-Roman"
+      ? "Times-Bold"
+      : bodyFont === "Helvetica"
+        ? "Helvetica-Bold"
+        : "Courier-Bold";
   const fontSize = job.fontSize ?? 12;
   const lineGap = resolveLineGap(job.lineSpacing, fontSize);
   const pageNumPos = job.pageNumberPosition ?? "bottom_center";
@@ -297,6 +342,8 @@ async function generatePdfBuffer(
 
   const contentWidth = width - margin * 2;
 
+  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(chapters, manuscript.title);
+
   // ── Title page ──────────────────────────────────────────
   doc.addPage();
   doc.moveDown(8);
@@ -304,30 +351,41 @@ async function generatePdfBuffer(
     align: "center",
     width: contentWidth,
   });
-  doc.moveDown(2);
-  doc.font(bodyFont).fontSize(fontSize - 2).fillColor("#666").text("Formatted by Etscript", {
-    align: "center",
-    width: contentWidth,
-  });
-  doc.fillColor("#000");
 
-  // ── Chapters ────────────────────────────────────────────
-  chapters.forEach((chapter, idx) => {
+  if (frontMatterParagraphs.length > 0) {
+    doc.moveDown(1.5);
+    for (const para of frontMatterParagraphs) {
+      doc
+        .font(bodyFont)
+        .fontSize(fontSize - 1)
+        .fillColor("#555555")
+        .text(para.trim(), { align: "center", width: contentWidth });
+      doc.moveDown(0.4);
+    }
+    doc.fillColor("#000000");
+  }
+
+  // ── Body chapters ────────────────────────────────────────────
+  bodyChapters.forEach((chapter, idx) => {
     doc.addPage();
 
-    const label = chapter.title && /^(chapter|part|prologue|epilogue)/i.test(chapter.title)
+    // Use the detected chapter heading as-is; only generate a label when
+    // the chapter was extracted without a heading (e.g. plain-text files).
+    const label = isChapterHeading(chapter.title)
       ? chapter.title
       : chapterLabel(idx, job.chapterNumberStyle);
 
     doc.moveDown(4);
-    doc.font(boldFont)
+    doc
+      .font(boldFont)
       .fontSize(fontSize + (job.theme === "premium" ? 6 : 4))
       .text(label, { align: "center", width: contentWidth });
 
     if (job.theme === "modern") {
       doc.moveDown(0.5);
       const lineY = doc.y;
-      doc.moveTo(margin + contentWidth * 0.2, lineY)
+      doc
+        .moveTo(margin + contentWidth * 0.2, lineY)
         .lineTo(margin + contentWidth * 0.8, lineY)
         .strokeColor("#aaaaaa")
         .lineWidth(0.5)
@@ -335,7 +393,10 @@ async function generatePdfBuffer(
       doc.strokeColor("#000").lineWidth(1);
     } else if (job.theme === "premium") {
       doc.moveDown(0.5);
-      doc.font(bodyFont).fontSize(fontSize - 1).fillColor("#888888")
+      doc
+        .font(bodyFont)
+        .fontSize(fontSize - 1)
+        .fillColor("#888888")
         .text("— \u2756 —", { align: "center", width: contentWidth });
       doc.fillColor("#000");
     }
@@ -355,25 +416,14 @@ async function generatePdfBuffer(
     }
   });
 
-  // ── Per-page watermark + page numbers ───────────────────
+  // ── Per-page: watermark footer + page numbers ────────────────
+  // Watermark is placed in the footer region only — never as a diagonal
+  // overlay across body content, headings, or title pages.
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
 
     if (watermark) {
-      doc.save();
-      doc.rotate(-45, { origin: [width / 2, height / 2] });
-      doc
-        .font(boldFont)
-        .fontSize(46)
-        .fillColor("#888888")
-        .opacity(0.1)
-        .text("ETSCRIPT  SAMPLE", width / 2 - 300, height / 2 - 28, {
-          width: 600,
-          align: "center",
-        });
-      doc.restore();
-
       doc.save();
       doc
         .font(bodyFont)
@@ -444,9 +494,12 @@ async function generateDocxBuffer(
       : AlignmentType.JUSTIFIED;
 
   const footerAlign =
-    pageNumPos === "bottom_right"
-      ? AlignmentType.RIGHT
-      : AlignmentType.CENTER;
+    pageNumPos === "bottom_right" ? AlignmentType.RIGHT : AlignmentType.CENTER;
+
+  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(
+    chapters,
+    manuscript.title,
+  );
 
   const sectionChildren: Paragraph[] = [];
 
@@ -460,19 +513,27 @@ async function generateDocxBuffer(
       alignment: AlignmentType.CENTER,
       children: [new TextRun({ text: manuscript.title, bold: true, size: fontSize + 16 })],
     }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: "Formatted by Etscript", size: fontSize - 4, color: "888888" })],
-    }),
-    new Paragraph({ children: [new PageBreak()] }),
   );
 
-  // Chapters
-  chapters.forEach((chapter, idx) => {
-    const label =
-      chapter.title && /^(chapter|part|prologue|epilogue)/i.test(chapter.title)
-        ? chapter.title
-        : chapterLabel(idx, job.chapterNumberStyle);
+  // Front matter sub-lines (author, subtitle, etc.)
+  for (const para of frontMatterParagraphs) {
+    sectionChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: para.trim(), size: fontSize - 4, color: "555555" })],
+        spacing: { before: 120 },
+      }),
+    );
+  }
+
+  sectionChildren.push(new Paragraph({ children: [new PageBreak()] }));
+
+  // Body chapters — use detected heading as-is; only generate a label when
+  // no chapter heading was present in the source text.
+  bodyChapters.forEach((chapter, idx) => {
+    const label = isChapterHeading(chapter.title)
+      ? chapter.title
+      : chapterLabel(idx, job.chapterNumberStyle);
 
     sectionChildren.push(
       new Paragraph({
@@ -498,11 +559,13 @@ async function generateDocxBuffer(
       );
     }
 
-    if (idx < chapters.length - 1) {
+    if (idx < bodyChapters.length - 1) {
       sectionChildren.push(new Paragraph({ children: [new PageBreak()] }));
     }
   });
 
+  // Footer: watermark text + page number
+  // The watermark lives exclusively in the footer region — no header watermark.
   const footerChildren: Paragraph[] = [];
   if (watermark) {
     footerChildren.push(
@@ -528,26 +591,6 @@ async function generateDocxBuffer(
     );
   }
 
-  const headers = watermark
-    ? {
-        default: new Header({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun({
-                  text: "ETSCRIPT SAMPLE — PURCHASE TO REMOVE WATERMARK",
-                  size: 16,
-                  color: "BBBBBB",
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
-        }),
-      }
-    : undefined;
-
   const doc = new Document({
     sections: [
       {
@@ -562,7 +605,6 @@ async function generateDocxBuffer(
             },
           },
         },
-        headers,
         footers:
           footerChildren.length > 0
             ? { default: new Footer({ children: footerChildren }) }
@@ -582,7 +624,14 @@ function buildPreviewHtml(
 ): string {
   const font = job.fontFamily ?? "Georgia";
   const fontSize = job.fontSize ?? 12;
-  const lsMap: Record<string, number> = { "1.0": 1.4, single: 1.4, "1.15": 1.55, "1.5": 1.7, "2.0": 2.2, double: 2.2 };
+  const lsMap: Record<string, number> = {
+    "1.0": 1.4,
+    single: 1.4,
+    "1.15": 1.55,
+    "1.5": 1.7,
+    "2.0": 2.2,
+    double: 2.2,
+  };
   const lineHeight = lsMap[job.lineSpacing ?? ""] ?? 1.7;
   const theme = job.theme ?? "classic";
 
@@ -595,13 +644,25 @@ function buildPreviewHtml(
 
   const chapterHeadingSize = theme === "premium" ? fontSize + 6 : fontSize + 4;
 
-  const chaptersHtml = chapters
+  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(
+    chapters,
+    manuscript.title,
+  );
+
+  const frontMatterHtml = frontMatterParagraphs
+    .map(
+      (p) =>
+        `<p style="text-align:center;color:#666;font-family:${font},serif;font-size:${fontSize - 1}px;margin:0.2em 0">${p.trim()}</p>`,
+    )
+    .join("");
+
+  const chaptersHtml = bodyChapters
     .slice(0, 2)
     .map(
       (ch, idx) => `
     <div style="margin-bottom:2em">
       <h2 style="text-align:center;font-family:${font},serif;font-size:${chapterHeadingSize}px;margin-bottom:0.4em;font-weight:bold">
-        ${ch.title && /^(chapter|part)/i.test(ch.title) ? ch.title : chapterLabel(idx, job.chapterNumberStyle)}
+        ${isChapterHeading(ch.title) ? ch.title : chapterLabel(idx, job.chapterNumberStyle)}
       </h2>
       ${chapterDivider}
       ${ch.paragraphs
@@ -618,9 +679,9 @@ function buildPreviewHtml(
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">
   <h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em">${manuscript.title}</h1>
-  <p style="text-align:center;color:#888;font-size:11px;margin-bottom:3em">Formatted by Etscript</p>
-  ${chaptersHtml}
-  ${chapters.length > 2 ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${chapters.length - 2} more chapter(s) in the downloaded files</p>` : ""}
+  ${frontMatterHtml}
+  <div style="margin-top:3em">${chaptersHtml}</div>
+  ${bodyChapters.length > 2 ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${bodyChapters.length - 2} more chapter(s) in the downloaded files</p>` : ""}
 </div>`;
 }
 
@@ -636,7 +697,6 @@ export async function generateFormattedFiles(
       rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
     } catch (err) {
       if (!(err instanceof MissingUploadError)) throw err;
-      // File not yet in GCS (e.g. upload incomplete) — fall through to sample content.
     }
   }
 

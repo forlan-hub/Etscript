@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { SessionTimeout } from "@/components/session-timeout";
 
 import LandingPage from "./pages/landing";
 import DashboardPage from "./pages/dashboard";
@@ -79,6 +80,7 @@ function App() {
           <TooltipProvider>
             <AppRoutes />
             <Toaster />
+            <SessionTimeout />
           </TooltipProvider>
         </QueryClientProvider>
       </AuthProvider>

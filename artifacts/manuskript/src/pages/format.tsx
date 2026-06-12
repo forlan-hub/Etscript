@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRoute, useLocation } from "wouter";
 import { useGetJob, useUpdateJob } from "@workspace/api-client-react";
-import { BookType, Layout, Palette, ArrowRight } from "lucide-react";
+import { BookType, Layout, Palette, ArrowRight, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WorkflowStepper } from "@/components/workflow-stepper";
 
 const BOOK_TYPES = [
   { id: "novel", label: "Novel", desc: "Standard fiction layouts" },
@@ -75,23 +76,7 @@ export default function FormatPage() {
   return (
     <AppLayout title="Format Setup">
       <div className="max-w-4xl mx-auto space-y-12">
-        {/* Progress steps could go here */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">1</div>
-            <span className="font-medium text-foreground">Basic Setup</span>
-          </div>
-          <div className="h-px bg-border flex-1 mx-4" />
-          <div className="flex items-center gap-2 opacity-50">
-            <div className="w-8 h-8 rounded-full bg-secondary text-muted-foreground flex items-center justify-center font-bold text-sm">2</div>
-            <span className="font-medium">Customize</span>
-          </div>
-          <div className="h-px bg-border flex-1 mx-4" />
-          <div className="flex items-center gap-2 opacity-50">
-            <div className="w-8 h-8 rounded-full bg-secondary text-muted-foreground flex items-center justify-center font-bold text-sm">3</div>
-            <span className="font-medium">Preview & Export</span>
-          </div>
-        </div>
+        <WorkflowStepper currentStep={2} jobId={jobId} />
 
         <div className="space-y-6">
           <div className="flex items-center gap-3">
@@ -221,7 +206,14 @@ export default function FormatPage() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-8 border-t border-border">
+        <div className="flex justify-between items-center pt-8 border-t border-border">
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/dashboard")}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          </Button>
           <Button 
             onClick={handleContinue} 
             disabled={!bookType || !target || !theme || updateJob.isPending}

@@ -9,6 +9,7 @@ import { useLocation } from "wouter";
 import { useCreateManuscript, useCreateJob, useGetUploadUrl } from "@workspace/api-client-react";
 import { UploadCloud, File, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WorkflowStepper } from "@/components/workflow-stepper";
 
 export default function UploadPage() {
   const [, setLocation] = useLocation();
@@ -115,6 +116,8 @@ export default function UploadPage() {
   return (
     <AppLayout title="New Manuscript">
       <div className="max-w-2xl mx-auto">
+        <WorkflowStepper currentStep={1} />
+
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">Upload Manuscript</CardTitle>
