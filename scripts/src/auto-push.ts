@@ -12,12 +12,16 @@ if (!TOKEN) {
 
 const REMOTE_URL = `https://${TOKEN}@github.com/${OWNER}/${REPO}.git`;
 
-function run(cmd: string, opts?: { cwd?: string }): string {
+function run(cmd: string, opts?: { cwd?: string; noPrompt?: boolean }): string {
+  const extraEnv: Record<string, string> = opts?.noPrompt
+    ? { GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "echo", SSH_ASKPASS: "echo" }
+    : {};
   try {
     return execSync(cmd, {
       encoding: "utf8",
       cwd: opts?.cwd ?? "/home/runner/workspace",
       stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, ...extraEnv },
     }).trim();
   } catch (err: unknown) {
     const e = err as { stderr?: string; message?: string };
@@ -61,6 +65,7 @@ function push() {
     const commitCount = ahead.split("\n").filter(Boolean).length;
     const result = run(
       `git -c credential.helper='' -c core.askPass='' push "${REMOTE_URL}" main`,
+      { noPrompt: true },
     );
     console.log(`[auto-push] ${timestamp} — pushed ${commitCount} commit(s)\n  ${result}`);
   } else if (!diff) {
