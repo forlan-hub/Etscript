@@ -10,7 +10,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const REMOTE_URL = `https://${TOKEN}@github.com/${OWNER}/${REPO}.git`;
+const REMOTE_URL = `https://x-access-token:${TOKEN}@github.com/${OWNER}/${REPO}.git`;
 
 function run(cmd: string, opts?: { cwd?: string; noPrompt?: boolean }): string {
   const extraEnv: Record<string, string> = opts?.noPrompt
