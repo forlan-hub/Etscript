@@ -58,13 +58,15 @@ function push() {
   }
 
   // Push any unpushed commits (including those created by the checkpoint system).
-  // Use -c credential.helper='' to bypass replit-git-askpass and rely solely on
-  // the token embedded in REMOTE_URL.
+  // origin is already set to REMOTE_URL (token embedded) by setup().
+  // We push to "origin main" so the local origin/main tracking ref stays in sync.
+  // noPrompt env vars disable replit-git-askpass so git uses the URL token directly.
+  run(`git fetch origin main 2>/dev/null || true`, { noPrompt: true });
   const ahead = run("git log origin/main..main --oneline 2>/dev/null");
   if (ahead) {
     const commitCount = ahead.split("\n").filter(Boolean).length;
     const result = run(
-      `git -c credential.helper='' -c core.askPass='' push "${REMOTE_URL}" main`,
+      `git -c credential.helper='' -c core.askPass='' push origin main`,
       { noPrompt: true },
     );
     console.log(`[auto-push] ${timestamp} — pushed ${commitCount} commit(s)\n  ${result}`);
