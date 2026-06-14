@@ -53,11 +53,15 @@ function push() {
     console.log(`[auto-push] ${timestamp} — committed ${count} file(s): ${preview}`);
   }
 
-  // Push any unpushed commits (including those created by the checkpoint system)
+  // Push any unpushed commits (including those created by the checkpoint system).
+  // Use -c credential.helper='' to bypass replit-git-askpass and rely solely on
+  // the token embedded in REMOTE_URL.
   const ahead = run("git log origin/main..main --oneline 2>/dev/null");
   if (ahead) {
     const commitCount = ahead.split("\n").filter(Boolean).length;
-    const result = run("git push origin main");
+    const result = run(
+      `git -c credential.helper='' -c core.askPass='' push "${REMOTE_URL}" main`,
+    );
     console.log(`[auto-push] ${timestamp} — pushed ${commitCount} commit(s)\n  ${result}`);
   } else if (!diff) {
     console.log(`[auto-push] ${timestamp} — nothing to commit or push.`);
