@@ -44,19 +44,24 @@ function push() {
   run("git add -A");
 
   const diff = run("git diff --cached --name-only");
-  if (!diff) {
-    console.log(`[auto-push] ${timestamp} — nothing to commit.`);
-    return;
+  if (diff) {
+    const files = diff.split("\n").filter(Boolean);
+    const count = files.length;
+    const preview = files.slice(0, 3).join(", ") + (count > 3 ? ` +${count - 3} more` : "");
+    const msg = `chore: auto-save ${count} file${count > 1 ? "s" : ""} [${timestamp}] — ${preview}`;
+    run(`git commit -m ${JSON.stringify(msg)}`);
+    console.log(`[auto-push] ${timestamp} — committed ${count} file(s): ${preview}`);
   }
 
-  const files = diff.split("\n").filter(Boolean);
-  const count = files.length;
-  const preview = files.slice(0, 3).join(", ") + (count > 3 ? ` +${count - 3} more` : "");
-  const msg = `chore: auto-save ${count} file${count > 1 ? "s" : ""} [${timestamp}] — ${preview}`;
-
-  run(`git commit -m ${JSON.stringify(msg)}`);
-  const result = run("git push origin main");
-  console.log(`[auto-push] ${timestamp} — pushed ${count} file(s)\n  ${preview}\n  ${result}`);
+  // Push any unpushed commits (including those created by the checkpoint system)
+  const ahead = run("git log origin/main..main --oneline 2>/dev/null");
+  if (ahead) {
+    const commitCount = ahead.split("\n").filter(Boolean).length;
+    const result = run("git push origin main");
+    console.log(`[auto-push] ${timestamp} — pushed ${commitCount} commit(s)\n  ${result}`);
+  } else if (!diff) {
+    console.log(`[auto-push] ${timestamp} — nothing to commit or push.`);
+  }
 }
 
 async function loop() {
