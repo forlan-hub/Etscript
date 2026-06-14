@@ -22,6 +22,7 @@ export * from './formattingJobStatus';
 export * from './formattingJobTheme';
 export * from './formattingJobUpdate';
 export * from './healthStatus';
+export * from './jobEditorContent';
 export * from './manuscript';
 export * from './manuscriptInput';
 export * from './manuscriptStatus';

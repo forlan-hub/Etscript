@@ -4,3 +4,5 @@
 - [Paystack e2e quirks](paystack-e2e-quirks.md) — Paystack rejects .test TLD emails; use @gmail.com. pg only resolvable from lib/db dir (createRequire from lib/db/package.json). bash tool has env secrets, code_execution sandbox does NOT.
 - [Paystack webhook security](paystack-webhook-security.md) — Webhook must check amount+currency against stored row, not just HMAC. Renewal branch (no txn row) must also gate on PREMIUM_AMOUNT_KOBO+CURRENCY. effectivePeriodEnd helper prevents stale past period on re-subscribe.
 - [Object storage setup](object-storage-setup.md) — GCS bucket provisioned; manuscript fileKey is now a /objects/ path; upload is PUT directly to GCS presigned URL.
+- [TipTap setContent API](tiptap-setcontent.md) — In the installed version, setContent(content, parseOptions?) — second arg is ParseOptions not boolean; use a skipNextSave ref to prevent auto-save on initial load.
+- [Editor engine HTML round-trip](editor-html-roundtrip.md) — Editor stores TipTap HTML in editedContent; parseHtmlToChapters reconstructs Chapter[]; h1→preamble bookTitle, h2→chapter heading, p→body. extractTitlePage then works correctly on the result.

@@ -102,17 +102,17 @@ export default function PreviewPage() {
   return (
     <AppLayout title="Preview & Export">
       <div className="max-w-5xl mx-auto space-y-6">
-        <WorkflowStepper currentStep={4} jobId={jobId} />
+        <WorkflowStepper currentStep={5} jobId={jobId} />
 
         <div className="flex items-center gap-4 mb-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setLocation(`/customize/${jobId}`)}
+            onClick={() => setLocation(`/review/${jobId}`)}
             disabled={isProcessing}
             className="gap-2"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Customize
+            <ArrowLeft className="w-4 h-4" /> Back to Review &amp; Edit
           </Button>
         </div>
 

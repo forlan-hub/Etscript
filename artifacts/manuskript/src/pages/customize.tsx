@@ -41,7 +41,8 @@ export default function CustomizePage() {
       if (job.marginSize) setMarginSize(job.marginSize);
       if (job.pageNumberPosition) setPageNumberPosition(job.pageNumberPosition);
       if (job.chapterNumberStyle) setChapterNumberStyle(job.chapterNumberStyle);
-      setShowBranding(job.showBranding ?? true);
+      const localDefault = localStorage.getItem("etscript_show_branding") !== "false";
+      setShowBranding(job.showBranding ?? localDefault);
       initializedRef.current = true;
     }
   }, [job]);
@@ -60,7 +61,7 @@ export default function CustomizePage() {
       }
     });
 
-    setLocation(`/preview/${jobId}`);
+    setLocation(`/review/${jobId}`);
   };
 
   const autoSave = (updates: any) => {

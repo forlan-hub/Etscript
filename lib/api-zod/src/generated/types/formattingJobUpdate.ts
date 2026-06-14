@@ -17,4 +17,5 @@ export interface FormattingJobUpdate {
   pageNumberPosition?: string;
   chapterNumberStyle?: string;
   showBranding?: boolean;
+  editedContent?: string;
 }

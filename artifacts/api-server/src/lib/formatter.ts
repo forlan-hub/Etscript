@@ -27,6 +27,7 @@ type JobOptions = {
   pageNumberPosition: string | null;
   chapterNumberStyle: string | null;
   showBranding: boolean | null;
+  editedContent?: string | null;
 };
 
 type ManuscriptInfo = {
@@ -745,23 +746,100 @@ function buildPreviewHtml(
 </div>`;
 }
 
+/** Parse TipTap-generated HTML back into chapters. */
+function parseHtmlToChapters(html: string): Chapter[] {
+  const decode = (s: string): string =>
+    s
+      .replace(/<[^>]+>/g, "")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
+  const tokenRe = /<(h1|h2|h3|p)(?:\s[^>]*)?>([^]*?)<\/\1>/gi;
+  const tokens: Array<{ tag: string; text: string }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = tokenRe.exec(html)) !== null) {
+    const text = decode(m[2]);
+    if (text) tokens.push({ tag: m[1].toLowerCase(), text });
+  }
+
+  const chapters: Chapter[] = [];
+  let currentTitle = "";
+  let currentParagraphs: string[] = [];
+
+  for (const token of tokens) {
+    if (token.tag === "h1") {
+      if (currentParagraphs.length > 0 || currentTitle) {
+        chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
+      }
+      currentTitle = "";
+      currentParagraphs = [token.text];
+    } else if (token.tag === "h2" || token.tag === "h3") {
+      if (currentParagraphs.length > 0 || currentTitle) {
+        chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
+      }
+      currentTitle = token.text;
+      currentParagraphs = [];
+    } else {
+      currentParagraphs.push(token.text);
+    }
+  }
+
+  if (currentTitle || currentParagraphs.length > 0) {
+    chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
+  }
+
+  return chapters;
+}
+
+/** Build clean TipTap-editable HTML from extracted title-page content. */
+function buildEditorHtml(titlePage: TitlePageContent): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  const parts: string[] = [];
+  if (titlePage.bookTitle) parts.push(`<h1>${esc(titlePage.bookTitle)}</h1>`);
+  for (const line of titlePage.subLines) parts.push(`<p>${esc(line)}</p>`);
+  for (const ch of titlePage.bodyChapters) {
+    parts.push(`<h2>${esc(ch.title)}</h2>`);
+    for (const para of ch.paragraphs) parts.push(`<p>${esc(para)}</p>`);
+  }
+
+  return parts.join("\n");
+}
+
 export async function generateFormattedFiles(
   job: JobOptions,
   manuscript: ManuscriptInfo,
 ): Promise<FormattedResult> {
-  let rawText = "";
+  let chapters: Chapter[];
+  let wordCount = 0;
 
-  if (manuscript.fileKey && manuscript.originalFilename) {
-    try {
-      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
-    } catch (err) {
-      if (!(err instanceof MissingUploadError)) throw err;
+  if (job.editedContent) {
+    chapters = parseHtmlToChapters(job.editedContent);
+    wordCount = chapters
+      .flatMap((c) => c.paragraphs)
+      .join(" ")
+      .split(/\s+/)
+      .filter(Boolean).length;
+  } else {
+    let rawText = "";
+    if (manuscript.fileKey && manuscript.originalFilename) {
+      try {
+        const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+        rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
+      } catch (err) {
+        if (!(err instanceof MissingUploadError)) throw err;
+      }
     }
+    wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
+    chapters = parseChapters(rawText, manuscript.title);
   }
 
-  const wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
-  const chapters = parseChapters(rawText, manuscript.title);
   const previewHtml = buildPreviewHtml(manuscript, chapters, job);
 
   return {
@@ -780,16 +858,42 @@ export async function generateDocumentBuffer(
   format: DocumentFormat,
   opts: { watermark: boolean },
 ): Promise<Buffer> {
-  let rawText = "";
+  let chapters: Chapter[];
 
-  if (manuscript.fileKey) {
-    const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-    rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename ?? "");
+  if (job.editedContent) {
+    chapters = parseHtmlToChapters(job.editedContent);
+  } else {
+    let rawText = "";
+    if (manuscript.fileKey) {
+      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename ?? "");
+    }
+    chapters = parseChapters(rawText, manuscript.title);
   }
-
-  const chapters = parseChapters(rawText, manuscript.title);
 
   return format === "pdf"
     ? generatePdfBuffer(job, manuscript, chapters, opts.watermark)
     : generateDocxBuffer(job, manuscript, chapters, opts.watermark);
+}
+
+/** Generate clean editor HTML from the manuscript source for the first-time editor load. */
+export async function generateEditorContent(
+  manuscript: ManuscriptInfo,
+): Promise<{ html: string; wordCount: number }> {
+  let rawText = "";
+  if (manuscript.fileKey && manuscript.originalFilename) {
+    try {
+      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
+    } catch (err) {
+      if (!(err instanceof MissingUploadError)) throw err;
+    }
+  }
+
+  const wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
+  const chapters = parseChapters(rawText, manuscript.title);
+  const titlePage = extractTitlePage(chapters);
+  const html = buildEditorHtml(titlePage);
+
+  return { html, wordCount };
 }

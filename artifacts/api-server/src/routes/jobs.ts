@@ -15,7 +15,7 @@ import {
   ProcessJobParams,
   GetJobReadinessParams,
 } from "@workspace/api-zod";
-import { generateFormattedFiles, generateDocumentBuffer, MissingUploadError } from "../lib/formatter";
+import { generateFormattedFiles, generateDocumentBuffer, generateEditorContent, MissingUploadError } from "../lib/formatter";
 import { getCleanAccess } from "../lib/entitlements";
 
 const router = Router();
@@ -274,6 +274,50 @@ router.get("/jobs/:id/download/:format", requireAuth, async (req, res): Promise<
   res.setHeader("Content-Length", buffer.length);
 
   res.send(buffer);
+});
+
+router.get("/jobs/:id/content", requireAuth, async (req, res): Promise<void> => {
+  const userId = getUserId(req);
+  const jobId = Number(req.params.id);
+  if (!Number.isFinite(jobId)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const [row] = await db
+    .select()
+    .from(formattingJobsTable)
+    .innerJoin(manuscriptsTable, eq(formattingJobsTable.manuscriptId, manuscriptsTable.id))
+    .where(
+      and(eq(formattingJobsTable.id, jobId), eq(manuscriptsTable.userId, userId)),
+    );
+
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const { formatting_jobs: job, manuscripts: manuscript } = row;
+
+  if (job.editedContent) {
+    const wordCount = job.editedContent
+      .replace(/<[^>]+>/g, " ")
+      .split(/\s+/)
+      .filter(Boolean).length;
+    res.json({ html: job.editedContent, wordCount });
+    return;
+  }
+
+  try {
+    const result = await generateEditorContent(manuscript);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof MissingUploadError) {
+      res.status(404).json({ error: "Manuscript file not found" });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.get("/jobs/:id/readiness", requireAuth, async (req, res): Promise<void> => {

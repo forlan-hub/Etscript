@@ -116,6 +116,7 @@ export const ListJobsResponseItem = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(listJobsResponseShowBrandingDefault),
+  "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -171,6 +172,7 @@ export const GetJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(getJobResponseShowBrandingDefault),
+  "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -209,7 +211,8 @@ export const UpdateJobBody = zod.object({
   "marginSize": zod.string().optional(),
   "pageNumberPosition": zod.string().optional(),
   "chapterNumberStyle": zod.string().optional(),
-  "showBranding": zod.boolean().optional()
+  "showBranding": zod.boolean().optional(),
+  "editedContent": zod.string().optional()
 })
 
 export const updateJobResponseShowBrandingDefault = true;
@@ -227,6 +230,7 @@ export const UpdateJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(updateJobResponseShowBrandingDefault),
+  "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -270,6 +274,7 @@ export const ProcessJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(processJobResponseShowBrandingDefault),
+  "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
   "outputDocxKey": zod.string().nullish(),
@@ -305,6 +310,19 @@ export const GetJobReadinessResponse = zod.object({
   "passed": zod.boolean(),
   "severity": zod.enum(['required', 'warning']).optional()
 }))
+})
+
+
+/**
+ * @summary Get clean editor HTML content for a formatting job
+ */
+export const GetJobEditorContentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetJobEditorContentResponse = zod.object({
+  "html": zod.string(),
+  "wordCount": zod.number()
 })
 
 

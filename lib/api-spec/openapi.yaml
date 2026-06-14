@@ -243,6 +243,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReadinessReport"
 
+  /jobs/{id}/content:
+    get:
+      operationId: getJobEditorContent
+      tags: [jobs]
+      summary: Get clean editor HTML content for a formatting job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Editor content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobEditorContent"
+        "404":
+          description: Not found
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -546,6 +567,8 @@ components:
         showBranding:
           type: boolean
           default: true
+        editedContent:
+          type: ["string", "null"]
         status:
           type: string
           enum: [draft, processing, completed, error]
@@ -598,6 +621,17 @@ components:
           type: string
         showBranding:
           type: boolean
+        editedContent:
+          type: string
+
+    JobEditorContent:
+      type: object
+      required: [html, wordCount]
+      properties:
+        html:
+          type: string
+        wordCount:
+          type: integer
 
     ReadinessItem:
       type: object

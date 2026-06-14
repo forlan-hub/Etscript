@@ -11,6 +11,7 @@ import DashboardPage from "./pages/dashboard";
 import UploadPage from "./pages/upload";
 import FormatPage from "./pages/format";
 import CustomizePage from "./pages/customize";
+import ReviewPage from "./pages/review";
 import PreviewPage from "./pages/preview";
 import ManuscriptDetailPage from "./pages/manuscript-detail";
 import PricingPage from "./pages/pricing";
@@ -54,6 +55,9 @@ function AppRoutes() {
       </Route>
       <Route path="/customize/:jobId">
         <ProtectedRoute component={CustomizePage} />
+      </Route>
+      <Route path="/review/:jobId">
+        <ProtectedRoute component={ReviewPage} />
       </Route>
       <Route path="/preview/:jobId">
         <ProtectedRoute component={PreviewPage} />

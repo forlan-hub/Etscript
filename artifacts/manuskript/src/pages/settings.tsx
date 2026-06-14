@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
-import { User, Mail, Shield, LogOut, CreditCard, Loader2 } from "lucide-react";
+import { User, Mail, Shield, LogOut, CreditCard, Loader2, Sliders } from "lucide-react";
 import { Link } from "wouter";
 import { useGetSubscription, useCancelSubscription } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +23,21 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const { data: subscription, refetch: refetchSubscription } = useGetSubscription();
   const cancelSubscription = useCancelSubscription();
+
+  const [showBranding, setShowBranding] = useState<boolean>(
+    () => localStorage.getItem("etscript_show_branding") !== "false",
+  );
+
+  const handleBrandingChange = (value: boolean) => {
+    setShowBranding(value);
+    localStorage.setItem("etscript_show_branding", value ? "true" : "false");
+    toast({
+      title: value ? "Attribution badge enabled" : "Attribution badge disabled",
+      description: value
+        ? '"Formatted with Etscript" will appear on the last page of new books.'
+        : 'The "Formatted with Etscript" badge will be hidden on new books.',
+    });
+  };
 
   const isPremium = subscription?.plan === "premium";
   const isCancelled = subscription?.status === "cancelled";
@@ -182,6 +200,32 @@ export default function SettingsPage() {
               <div className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full border border-green-200">
                 Active
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-xl flex items-center gap-2">
+              <Sliders className="w-5 h-5 text-primary" /> Formatting Preferences
+            </CardTitle>
+            <CardDescription>Defaults applied to new books you format</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div>
+                <Label htmlFor="global-branding" className="font-medium text-foreground cursor-pointer">
+                  Attribution badge
+                </Label>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Show "Formatted with Etscript" on the last page of your books
+                </p>
+              </div>
+              <Switch
+                id="global-branding"
+                checked={showBranding}
+                onCheckedChange={handleBrandingChange}
+              />
             </div>
           </CardContent>
         </Card>

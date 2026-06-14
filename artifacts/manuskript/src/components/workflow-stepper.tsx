@@ -6,11 +6,12 @@ const STEPS = [
   { label: "Upload" },
   { label: "Format" },
   { label: "Customize" },
+  { label: "Review & Edit" },
   { label: "Preview & Export" },
 ];
 
 interface WorkflowStepperProps {
-  currentStep: 1 | 2 | 3 | 4;
+  currentStep: 1 | 2 | 3 | 4 | 5;
   jobId?: number;
 }
 
@@ -19,7 +20,8 @@ function stepPath(step: number, jobId?: number): string | undefined {
   if (!jobId) return undefined;
   if (step === 2) return `/format/${jobId}`;
   if (step === 3) return `/customize/${jobId}`;
-  if (step === 4) return `/preview/${jobId}`;
+  if (step === 4) return `/review/${jobId}`;
+  if (step === 5) return `/preview/${jobId}`;
   return undefined;
 }
 

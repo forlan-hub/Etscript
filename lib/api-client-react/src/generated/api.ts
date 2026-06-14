@@ -28,6 +28,7 @@ import type {
   FormattingJobInput,
   FormattingJobUpdate,
   HealthStatus,
+  JobEditorContent,
   Manuscript,
   ManuscriptInput,
   PaymentCheckout,
@@ -931,6 +932,83 @@ export function useGetJobReadiness<TData = Awaited<ReturnType<typeof getJobReadi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetJobReadinessQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetJobEditorContentUrl = (id: number,) => {
+
+
+
+
+  return `/api/jobs/${id}/content`
+}
+
+/**
+ * @summary Get clean editor HTML content for a formatting job
+ */
+export const getJobEditorContent = async (id: number, options?: RequestInit): Promise<JobEditorContent> => {
+
+  return customFetch<JobEditorContent>(getGetJobEditorContentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetJobEditorContentQueryKey = (id: number,) => {
+    return [
+    `/api/jobs/${id}/content`
+    ] as const;
+    }
+
+
+export const getGetJobEditorContentQueryOptions = <TData = Awaited<ReturnType<typeof getJobEditorContent>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJobEditorContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetJobEditorContentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getJobEditorContent>>> = ({ signal }) => getJobEditorContent(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getJobEditorContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetJobEditorContentQueryResult = NonNullable<Awaited<ReturnType<typeof getJobEditorContent>>>
+export type GetJobEditorContentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get clean editor HTML content for a formatting job
+ */
+
+export function useGetJobEditorContent<TData = Awaited<ReturnType<typeof getJobEditorContent>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJobEditorContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetJobEditorContentQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

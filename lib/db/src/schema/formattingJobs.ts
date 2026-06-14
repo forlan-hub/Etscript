@@ -19,6 +19,7 @@ export const formattingJobsTable = pgTable("formatting_jobs", {
   pageNumberPosition: text("page_number_position"),
   chapterNumberStyle: text("chapter_number_style"),
   showBranding: boolean("show_branding").notNull().default(true),
+  editedContent: text("edited_content"),
   status: text("status").notNull().default("draft"),
   outputPdfKey: text("output_pdf_key"),
   outputDocxKey: text("output_docx_key"),
