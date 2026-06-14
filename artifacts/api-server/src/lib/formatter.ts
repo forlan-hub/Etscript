@@ -64,40 +64,72 @@ function isChapterHeading(title: string): boolean {
   );
 }
 
-/**
- * Splits parsed chapters into:
- * - frontMatterParagraphs: text that appeared before the first chapter heading
- *   (author name, subtitle, dedication, etc.) — deduplicated against the title.
- * - bodyChapters: chapters that start with a recognised heading.
- *
- * This prevents the formatter from generating "Chapter 1" labels for content
- * the author already structured, and avoids duplicating the manuscript title.
- */
-type DocumentParts = {
-  frontMatterParagraphs: string[];
+type TitlePageContent = {
+  bookTitle: string | null;
+  subLines: string[];
   bodyChapters: Chapter[];
 };
 
-function separateDocumentParts(chapters: Chapter[], manuscriptTitle: string): DocumentParts {
+/**
+ * Extracts title-page content from parsed chapters.
+ *
+ * Two cases:
+ * 1. The first parsed section has no chapter heading — it is a preamble; all its
+ *    paragraphs become the title page (first line = book title, rest = sub-lines).
+ * 2. The first section IS a chapter — scan its leading paragraphs for lines that
+ *    look like title-page material (short, ALL-CAPS, or attribution keywords) and
+ *    extract them, leaving the remainder as chapter body text.
+ *
+ * manuscript.title (the user's upload label) is never used in the formatted output.
+ */
+function extractTitlePage(chapters: Chapter[]): TitlePageContent {
   if (chapters.length === 0) {
-    return { frontMatterParagraphs: [], bodyChapters: [] };
+    return { bookTitle: null, subLines: [], bodyChapters: [] };
   }
 
   const first = chapters[0];
+  const lines: string[] = [];
+  let bodyChapters: Chapter[];
 
   if (!isChapterHeading(first.title)) {
-    const normalTitle = manuscriptTitle.trim().toLowerCase();
-    const frontMatterParagraphs = first.paragraphs.filter((p) => {
-      const np = p.trim().toLowerCase();
-      return np.length > 0 && np !== normalTitle;
-    });
-    return {
-      frontMatterParagraphs,
-      bodyChapters: chapters.slice(1),
-    };
+    // Pre-chapter preamble — all paragraphs are title-page material
+    lines.push(...first.paragraphs.filter((p) => p.trim().length > 0));
+    bodyChapters = chapters.slice(1);
+  } else {
+    // First section is a chapter — extract leading title-like paragraphs
+    let splitIdx = 0;
+    for (let i = 0; i < Math.min(first.paragraphs.length, 10); i++) {
+      const para = first.paragraphs[i].trim();
+      const wordCount = para.split(/\s+/).filter(Boolean).length;
+      const isTitleContent =
+        wordCount <= 10 ||
+        /^[A-Z\d\s:—–.,'"!?]+$/.test(para) ||
+        /^(by|copyright|©|\d{4}|all rights|dedicated to|isbn|published by)/i.test(para);
+
+      if (isTitleContent && wordCount <= 20) {
+        lines.push(para);
+        splitIdx = i + 1;
+      } else {
+        break;
+      }
+    }
+
+    if (lines.length > 0) {
+      bodyChapters = [
+        { title: first.title, paragraphs: first.paragraphs.slice(splitIdx) },
+        ...chapters.slice(1),
+      ];
+    } else {
+      bodyChapters = chapters;
+    }
   }
 
-  return { frontMatterParagraphs: [], bodyChapters: chapters };
+  if (lines.length === 0) {
+    return { bookTitle: null, subLines: [], bodyChapters };
+  }
+
+  const [bookTitle, ...subLines] = lines;
+  return { bookTitle, subLines, bodyChapters };
 }
 
 const SAMPLE_PARAGRAPHS = [
@@ -343,19 +375,22 @@ async function generatePdfBuffer(
 
   const contentWidth = width - margin * 2;
 
-  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(chapters, manuscript.title);
+  const { bookTitle, subLines, bodyChapters } = extractTitlePage(chapters);
 
   // ── Title page ──────────────────────────────────────────
   doc.addPage();
   doc.moveDown(8);
-  doc.font(boldFont).fontSize(fontSize + 10).text(manuscript.title, {
-    align: "center",
-    width: contentWidth,
-  });
 
-  if (frontMatterParagraphs.length > 0) {
-    doc.moveDown(1.5);
-    for (const para of frontMatterParagraphs) {
+  if (bookTitle) {
+    doc.font(boldFont).fontSize(fontSize + 10).text(bookTitle, {
+      align: "center",
+      width: contentWidth,
+    });
+  }
+
+  if (subLines.length > 0) {
+    doc.moveDown(bookTitle ? 1.5 : 0);
+    for (const para of subLines) {
       doc
         .font(bodyFont)
         .fontSize(fontSize - 1)
@@ -363,16 +398,6 @@ async function generatePdfBuffer(
         .text(para.trim(), { align: "center", width: contentWidth });
       doc.moveDown(0.4);
     }
-    doc.fillColor("#000000");
-  }
-
-  if (job.showBranding !== false) {
-    doc.moveDown(frontMatterParagraphs.length > 0 ? 1 : 2);
-    doc
-      .font(bodyFont)
-      .fontSize(7.5)
-      .fillColor("#c8c8c8")
-      .text("Formatted with Etscript", { align: "center", width: contentWidth });
     doc.fillColor("#000000");
   }
 
@@ -427,27 +452,36 @@ async function generatePdfBuffer(
     }
   });
 
-  // ── Per-page: watermark footer + page numbers ────────────────
-  // Watermark is placed in the footer region only — never as a diagonal
-  // overlay across body content, headings, or title pages.
+  // ── Per-page: diagonal watermark + last-page badge + page numbers ────
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
+    const isLastPage = i === range.start + range.count - 1;
 
     if (watermark) {
       doc.save();
+      doc.translate(width / 2, height / 2);
+      doc.rotate(-45);
+      doc
+        .font(boldFont)
+        .fontSize(52)
+        .fillColor("#c0c0c0")
+        .opacity(0.22)
+        .text("PREVIEW", -200, -30, { width: 400, align: "center", lineBreak: false });
+      doc.restore();
+    }
+
+    if (job.showBranding !== false && isLastPage) {
+      const badgeY = pageNumPos === "none" ? height - margin / 2 - 9 : height - margin / 2 - 22;
       doc
         .font(bodyFont)
         .fontSize(7.5)
-        .fillColor("#999999")
-        .opacity(0.95)
-        .text(
-          "Preview generated with Etscript — purchase to remove this watermark",
-          margin,
-          height - margin / 2 + 6,
-          { width: contentWidth, align: "center" },
-        );
-      doc.restore();
+        .fillColor("#c8c8c8")
+        .text("Formatted with Etscript", margin, badgeY, {
+          width: contentWidth,
+          align: "center",
+        });
+      doc.fillColor("#000");
     }
 
     if (pageNumPos !== "none" && i !== range.start) {
@@ -507,42 +541,30 @@ async function generateDocxBuffer(
   const footerAlign =
     pageNumPos === "bottom_right" ? AlignmentType.RIGHT : AlignmentType.CENTER;
 
-  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(
-    chapters,
-    manuscript.title,
-  );
+  const { bookTitle, subLines, bodyChapters } = extractTitlePage(chapters);
 
   const sectionChildren: Paragraph[] = [];
 
-  // Title page
-  sectionChildren.push(
-    new Paragraph({
-      children: [new TextRun({ text: "", break: 8 })],
-    }),
-    new Paragraph({
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: manuscript.title, bold: true, size: fontSize + 16 })],
-    }),
-  );
+  // Title page — spacer + book title from document content (not upload label)
+  sectionChildren.push(new Paragraph({ children: [new TextRun({ text: "", break: 8 })] }));
 
-  // Front matter sub-lines (author, subtitle, etc.)
-  for (const para of frontMatterParagraphs) {
+  if (bookTitle) {
+    sectionChildren.push(
+      new Paragraph({
+        heading: HeadingLevel.TITLE,
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: bookTitle, bold: true, size: fontSize + 16 })],
+      }),
+    );
+  }
+
+  // Sub-lines (author, subtitle, copyright, etc.)
+  for (const para of subLines) {
     sectionChildren.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [new TextRun({ text: para.trim(), size: fontSize - 4, color: "555555" })],
         spacing: { before: 120 },
-      }),
-    );
-  }
-
-  if (job.showBranding !== false) {
-    sectionChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: "Formatted with Etscript", size: 16, color: "C8C8C8" })],
-        spacing: { before: frontMatterParagraphs.length > 0 ? 240 : 480 },
       }),
     );
   }
@@ -585,8 +607,18 @@ async function generateDocxBuffer(
     }
   });
 
+  // Attribution badge at end of document (last page)
+  if (job.showBranding !== false) {
+    sectionChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "Formatted with Etscript", size: 16, color: "C8C8C8" })],
+        spacing: { before: 960 },
+      }),
+    );
+  }
+
   // Footer: watermark text + page number
-  // The watermark lives exclusively in the footer region — no header watermark.
   const footerChildren: Paragraph[] = [];
   if (watermark) {
     footerChildren.push(
@@ -594,12 +626,13 @@ async function generateDocxBuffer(
         alignment: AlignmentType.CENTER,
         children: [
           new TextRun({
-            text: "Preview generated with Etscript — purchase to remove this watermark",
-            size: 14,
-            color: "999999",
-            italics: true,
+            text: "PREVIEW — Purchase to remove this watermark",
+            size: 20,
+            color: "BBBBBB",
+            bold: true,
           }),
         ],
+        spacing: { after: 120 },
       }),
     );
   }
@@ -665,17 +698,18 @@ function buildPreviewHtml(
 
   const chapterHeadingSize = theme === "premium" ? fontSize + 6 : fontSize + 4;
 
-  const { frontMatterParagraphs, bodyChapters } = separateDocumentParts(
-    chapters,
-    manuscript.title,
-  );
+  const { bookTitle, subLines, bodyChapters } = extractTitlePage(chapters);
 
-  const frontMatterHtml = frontMatterParagraphs
+  const subLinesHtml = subLines
     .map(
       (p) =>
         `<p style="text-align:center;color:#666;font-family:${font},serif;font-size:${fontSize - 1}px;margin:0.2em 0">${p.trim()}</p>`,
     )
     .join("");
+
+  const titleBlockHtml = bookTitle
+    ? `<h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em;font-weight:bold">${bookTitle}</h1>${subLinesHtml}`
+    : subLinesHtml;
 
   const chaptersHtml = bodyChapters
     .slice(0, 2)
@@ -699,16 +733,15 @@ function buildPreviewHtml(
 
   const brandingHtml =
     job.showBranding !== false
-      ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:0.6em 0 0">Formatted with Etscript</p>`
+      ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:2em 0 0">Formatted with Etscript</p>`
       : "";
 
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">
-  <h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em">${manuscript.title}</h1>
-  ${frontMatterHtml}
-  ${brandingHtml}
+  ${titleBlockHtml}
   <div style="margin-top:3em">${chaptersHtml}</div>
   ${bodyChapters.length > 2 ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${bodyChapters.length - 2} more chapter(s) in the downloaded files</p>` : ""}
+  ${brandingHtml}
 </div>`;
 }
 
