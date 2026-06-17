@@ -1,0 +1,437 @@
+ETSCRIPT PRD VERSION 1.2
+Product Enhancement & Strategic Expansion Document
+Product Name
+Etscript
+Website
+etscript.site
+Product Owner
+FurstoneTech Solutions Limited
+Version
+PRD v1.2
+Status
+Approved for Development
+________________________________________
+1. PRODUCT VISION
+Etscript is a web-based manuscript and document formatting platform that transforms raw user content into professionally formatted, publication-ready documents through structured formatting templates.
+The platform is designed to eliminate the technical complexity of document formatting and enable users to focus on content creation while Etscript handles formatting, styling, pagination, document structure, and export preparation.
+Etscript is not an AI writing platform and shall not generate content on behalf of users. Its primary function is professional formatting, document organization, citation management, and export generation.
+________________________________________
+2. TARGET USERS
+Publishing & Writing
+•	Novel Writers
+•	Authors
+•	Ghostwriters
+•	Publishers
+•	Memoir Writers
+•	Autobiography Writers
+•	eBook Creators
+Academic Users
+•	Undergraduate Students
+•	Postgraduate Students
+•	Researchers
+•	Lecturers
+•	Supervisors
+•	Academic Institutions
+Business Users
+•	Consultants
+•	SMEs
+•	Startups
+•	Trainers
+•	Corporate Teams
+Professional Users
+•	HR Officers
+•	Job Seekers
+•	Executives
+•	Administrative Staff
+________________________________________
+3. CORE PRODUCT PRINCIPLE
+Content and Formatting Separation
+User content shall remain separate from formatting rules.
+The system shall never permanently alter original manuscript content.
+Formatting instructions shall be applied through template layers and rendering engines.
+Benefits:
+•	Template switching
+•	Formatting previews
+•	Undo capability
+•	Multiple export styles from one manuscript
+________________________________________
+4. DOCUMENT CATEGORIES
+________________________________________
+A. Publishing Suite
+Templates
+•	Novel
+•	Memoir
+•	Autobiography
+•	Biography
+•	Motivational Book
+•	Self-Help Book
+•	Business Book
+•	Christian Book
+•	Devotional
+•	Children's Book
+•	Workbook
+•	Journal
+•	eBook
+•	Training Manual
+________________________________________
+B. Academic Suite
+Templates
+•	Undergraduate Project
+•	HND Project
+•	Master's Thesis
+•	PhD Thesis
+•	Dissertation
+•	Research Paper
+•	Journal Article
+•	Seminar Paper
+•	Conference Paper
+________________________________________
+Academic Formatting Features
+•	APA 7th Edition
+•	MLA
+•	Harvard
+•	Chicago
+•	IEEE
+Support:
+•	Table of Contents 
+•	List of Tables
+•	List of Figures
+•	Front Matter Formatting
+•	Roman Numeral Pagination
+•	Arabic Pagination
+•	Chapter Structuring
+•	Appendices
+•	Bibliography Formatting
+________________________________________
+C. Business & Corporate Suite
+Templates
+•	Company Profile
+•	Business Proposal
+•	Business Plan
+•	Feasibility Report
+•	Annual Report
+•	Training Manual
+•	Internal Report
+•	Consultancy Report
+•	Market Research Report
+•	Strategic Plan
+________________________________________
+D. Professional Letter Suite
+HR Letters
+•	Appointment Letter
+•	Promotion Letter
+•	Confirmation Letter
+•	Query Letter
+•	Warning Letter
+•	Termination Letter
+Career Documents
+•	Cover Letter
+•	Recommendation Letter
+•	Reference Letter
+•	Acceptance Letter
+•	Resignation Letter
+Business Correspondence
+•	Formal Business Letter
+•	Request Letter
+•	Complaint Letter
+•	Partnership Proposal Letter
+•	Introduction Letter
+________________________________________
+5. TEMPLATE VISUAL PREVIEW SYSTEM
+Before template selection, users shall see:
+•	Thumbnail preview
+•	Sample pages
+•	Formatting characteristics
+•	Intended use
+Users shall be able to compare templates before selection.
+________________________________________
+6. STRUCTURE DETECTION ENGINE
+The system shall detect:
+Headings
+Examples:
+CHAPTER ONE
+
+Chapter 1
+
+CHAPTER 1
+
+1.0 Introduction
+Subheadings
+Examples:
+1.1
+
+1.2
+
+2.3
+Lists
+•	Bulleted
+•	Numbered
+Tables
+Quotes
+References
+Appendices
+________________________________________
+7. MANUSCRIPT NORMALIZATION ENGINE
+Before formatting, the system shall normalize content according to:
+•	Selected template
+•	User preferences
+Examples:
+Remove duplicate chapter headings
+If manuscript contains:
+Chapter 1
+and template already provides chapter structure,
+the system shall prevent duplicate rendering.
+________________________________________
+Standardize spacing
+Standardize line breaks
+Standardize indentation
+Standardize heading hierarchy
+________________________________________
+8. REVIEW & EDIT WORKSPACE
+Users shall be able to:
+Edit Content
+•	Add text
+•	Delete text
+•	Replace text
+•	Move content
+Format Content
+•	Bold
+•	Italic
+•	Underline
+•	Alignment
+•	Page breaks
+•	Section breaks
+Navigation
+Users shall be able to move backward and forward between steps without losing work.
+________________________________________
+9. EXPORT ENGINE
+Supported exports:
+Free
+•	Watermarked PDF
+Paid
+•	PDF
+•	DOCX
+Future-ready:
+•	EPUB
+•	Kindle Format
+________________________________________
+10. WATERMARK SYSTEM
+Free exports shall include:
+Formatted by Etscript
+Footer watermark only.
+No intrusive page overlays.
+Paid exports remove watermark.
+________________________________________
+11. ISBN PREPARATION TOOL (PREMIUM)
+Purpose:
+Assist users in preparing information required for ISBN application.
+Features:
+•	Author metadata collection
+•	Publisher information collection
+•	Book metadata generation
+•	ISBN application data sheet
+The platform shall not issue official ISBN numbers.
+________________________________________
+12. CITATION & REFERENCE ENGINE (PREMIUM)
+Functions:
+Citation Builder
+Bibliography Builder
+Reference Generator
+Style Conversion
+Examples:
+•	APA → MLA
+•	MLA → Harvard
+•	Chicago → APA
+________________________________________
+13. CUSTOM TEMPLATE BUILDER (PREMIUM)
+Premium users shall be able to:
+•	Create templates
+•	Save templates
+•	Edit templates
+•	Duplicate templates
+•	Delete templates
+Configurable Settings
+•	Fonts
+•	Margins
+•	Header styles
+•	Footer styles
+•	Pagination
+•	TOC styling
+•	Reference styling
+________________________________________
+Limits
+Premium users may save:
+•	Up to 5 custom templates
+________________________________________
+14. USER PLANS
+________________________________________
+Free Plan
+Storage
+•	1 manuscript
+•	20 MB maximum
+Features
+•	Basic templates
+•	Watermarked export
+________________________________________
+One-Time Export Plan
+Price
+₦2,500
+Storage
+•	3 manuscripts
+•	100 MB maximum
+Features
+•	One export entitlement
+•	Watermark-free export
+________________________________________
+Premium Plan
+Price
+₦5,000/month
+Storage
+•	50 manuscripts
+•	5 GB maximum
+Features
+•	Unlimited exports
+•	Academic Suite
+•	Citation Engine
+•	ISBN Preparation Tool
+•	Premium Templates
+•	Custom Templates
+________________________________________
+15. SUBSCRIPTION EXPIRY MANAGEMENT
+When Premium expires:
+Allowed
+•	Login
+•	View manuscripts
+•	Manage account
+•	Renew subscription
+•	Purchase one-time export
+Restricted
+•	Formatting engine
+•	Export engine
+•	Citation engine
+•	Premium templates
+•	Academic Suite
+until payment is made.
+________________________________________
+16. SESSION MANAGEMENT
+Automatic inactivity timeout.
+Example:
+Your session will expire in 2 minutes.
+
+Stay signed in?
+Options:
+•	Stay Signed In
+•	Logout
+No device/location details required.
+________________________________________
+17. AUTHENTICATION & SECURITY
+Authentication
+•	Email Login
+•	Google Login
+Two-Factor Authentication
+Mandatory support using:
+Google Authenticator
+________________________________________
+18. PRIVACY BY DESIGN
+The system shall collect only:
+•	Name
+•	Email Address
+•	Authentication Credentials
+•	Manuscripts
+•	Formatting Preferences
+•	Transaction Records
+The platform shall not collect:
+•	Date of Birth
+•	Gender
+•	Nationality
+•	Residential Address
+•	Government IDs
+•	Google Profile Photos
+________________________________________
+19. AGE ELIGIBILITY
+Registration shall include mandatory confirmation:
+☐ I confirm that I am at least 18 years old and eligible to use Etscript.
+Registration shall not proceed without acceptance.
+No date of birth shall be collected.
+________________________________________
+20. DATA RETENTION
+Manuscripts
+Retained until deleted by user.
+Generated Exports
+Retained for 60 days.
+Deleted Content
+Permanently removed within 30 days.
+Audit Logs
+Retained for 5 months.
+Payment Records
+Retained in accordance with applicable accounting, tax, audit, and legal requirements.
+________________________________________
+21. ACCOUNT & DATA DELETION
+Users shall have access to:
+Delete My Account
+Delete My Data
+within Settings.
+Deletion shall remove:
+•	Manuscripts
+•	Exports
+•	Preferences
+•	Profile Data
+except information required by law.
+________________________________________
+22. CONTENT OWNERSHIP
+Users retain full ownership of:
+•	Manuscripts
+•	Books
+•	Research Papers
+•	Reports
+•	Projects
+•	Templates created by users
+Etscript acquires no ownership rights over user content.
+________________________________________
+23. ANALYTICS POLICY
+Internal analytics only.
+Track:
+•	Revenue
+•	Subscription growth
+•	Export volume
+•	Template popularity
+Prohibited:
+•	Google Analytics
+•	Meta Pixel
+•	Session Recording
+•	Behavioural Profiling
+________________________________________
+24. STORAGE ARCHITECTURE
+Supabase shall be used.
+Separate storage buckets:
+manuscripts/
+Store:
+•	Uploaded files
+•	Drafts
+•	Source documents
+exports/
+Store:
+•	Generated PDFs
+•	DOCX exports
+•	Output files
+________________________________________
+25. DEVELOPMENT GOVERNANCE
+GitHub Backup Requirement
+Replit shall:
+•	Maintain repository synchronization with GitHub.
+•	Commit code frequently.
+•	Create recovery checkpoints before major feature implementations.
+•	Preserve rollback capability.
+________________________________________
+26. SUCCESS METRICS
+The platform should measure:
+•	User registrations
+•	Conversion to paid plans
+•	Export volume
+•	Subscription retention
+•	Academic Suite usage
+•	Custom Template adoption
+•	Customer satisfaction
+________________________________________
+FINAL PRODUCT POSITIONING
+Etscript is a privacy-focused document formatting platform that enables writers, students, researchers, professionals, and businesses to transform raw content into professionally formatted, publication-ready documents without requiring advanced formatting skills.
