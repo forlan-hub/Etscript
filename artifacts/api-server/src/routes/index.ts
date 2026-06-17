@@ -8,6 +8,7 @@ import subscriptionRouter from "./subscription";
 import storageRouter from "./storage";
 import accountRouter from "./account";
 import userTemplatesRouter from "./userTemplates";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(subscriptionRouter);
 router.use(storageRouter);
 router.use(accountRouter);
 router.use(userTemplatesRouter);
+router.use(adminRouter);
 
 export default router;

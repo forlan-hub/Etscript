@@ -24,6 +24,10 @@ import ToolsCitationPage from "./pages/tools-citation";
 import ToolsIsbnPage from "./pages/tools-isbn";
 import ToolsMyTemplatesPage from "./pages/tools-my-templates";
 import NotFoundPage from "./pages/not-found";
+import AdminDashboardPage from "./pages/admin/index";
+import AdminUsersPage from "./pages/admin/users";
+import AdminTransactionsPage from "./pages/admin/transactions";
+import AdminActivityPage from "./pages/admin/activity";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +95,10 @@ function AppRoutes() {
       <Route path="/tools/my-templates">
         <ProtectedRoute component={ToolsMyTemplatesPage} />
       </Route>
+      <Route path="/admin/users" component={AdminUsersPage} />
+      <Route path="/admin/transactions" component={AdminTransactionsPage} />
+      <Route path="/admin/activity" component={AdminActivityPage} />
+      <Route path="/admin" component={AdminDashboardPage} />
       <Route component={NotFoundPage} />
     </Switch>
   );

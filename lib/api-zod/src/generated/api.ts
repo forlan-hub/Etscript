@@ -413,6 +413,77 @@ export const GetSubscriptionResponse = zod.object({
 
 
 /**
+ * @summary Check whether the current user has admin access
+ */
+export const GetAdminCheckResponse = zod.object({
+  "isAdmin": zod.boolean()
+})
+
+
+/**
+ * @summary Platform-wide aggregate statistics
+ */
+export const GetAdminStatsResponse = zod.object({
+  "totalUsers": zod.number(),
+  "totalManuscripts": zod.number(),
+  "totalJobs": zod.number(),
+  "activePremiumSubs": zod.number(),
+  "totalRevenuePaidKobo": zod.number(),
+  "recentSignups": zod.number(),
+  "monthlyRevenue": zod.array(zod.object({
+  "month": zod.string(),
+  "amountKobo": zod.number()
+}))
+})
+
+
+/**
+ * @summary Per-user rollup for all platform users
+ */
+export const GetAdminUsersResponseItem = zod.object({
+  "userId": zod.string(),
+  "email": zod.string().nullish(),
+  "joinedAt": zod.string(),
+  "plan": zod.enum(['free', 'payg', 'premium']),
+  "manuscriptCount": zod.number(),
+  "jobCount": zod.number(),
+  "totalPaidKobo": zod.number(),
+  "lastActivityAt": zod.string().nullish()
+})
+export const GetAdminUsersResponse = zod.array(GetAdminUsersResponseItem)
+
+
+/**
+ * @summary Recent platform transactions
+ */
+export const GetAdminTransactionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "reference": zod.string(),
+  "type": zod.string(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetAdminTransactionsResponse = zod.array(GetAdminTransactionsResponseItem)
+
+
+/**
+ * @summary Recent platform activity log
+ */
+export const GetAdminActivityResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "type": zod.string(),
+  "description": zod.string(),
+  "manuscriptTitle": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetAdminActivityResponse = zod.array(GetAdminActivityResponseItem)
+
+
+/**
  * @summary Get current user's storage usage and plan limits
  */
 export const GetStorageLimitsResponse = zod.object({

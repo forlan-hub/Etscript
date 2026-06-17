@@ -321,6 +321,64 @@ export interface StorageUploadResponse {
   metadata?: StorageUploadRequest;
 }
 
+export interface AdminMonthlyMetric {
+  month: string;
+  amountKobo: number;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalManuscripts: number;
+  totalJobs: number;
+  activePremiumSubs: number;
+  totalRevenuePaidKobo: number;
+  recentSignups: number;
+  monthlyRevenue: AdminMonthlyMetric[];
+}
+
+export type AdminUserPlan = typeof AdminUserPlan[keyof typeof AdminUserPlan];
+
+
+export const AdminUserPlan = {
+  free: 'free',
+  payg: 'payg',
+  premium: 'premium',
+} as const;
+
+export interface AdminUser {
+  userId: string;
+  /** @nullable */
+  email?: string | null;
+  joinedAt: string;
+  plan: AdminUserPlan;
+  manuscriptCount: number;
+  jobCount: number;
+  totalPaidKobo: number;
+  /** @nullable */
+  lastActivityAt?: string | null;
+}
+
+export interface AdminTransaction {
+  id: number;
+  userId: string;
+  reference: string;
+  type: string;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminActivityItem {
+  id: number;
+  userId: string;
+  type: string;
+  description: string;
+  /** @nullable */
+  manuscriptTitle?: string | null;
+  createdAt: string;
+}
+
 export type StorageLimitsPlan = typeof StorageLimitsPlan[keyof typeof StorageLimitsPlan];
 
 
@@ -408,5 +466,9 @@ export interface ErrorEnvelope {
 
 export type VerifyPaymentParams = {
 reference: string;
+};
+
+export type GetAdminCheck200 = {
+  isAdmin: boolean;
 };
 

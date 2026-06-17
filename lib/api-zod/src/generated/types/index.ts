@@ -8,6 +8,12 @@
 
 export * from './activityItem';
 export * from './activityItemType';
+export * from './adminActivityItem';
+export * from './adminMonthlyMetric';
+export * from './adminStats';
+export * from './adminTransaction';
+export * from './adminUser';
+export * from './adminUserPlan';
 export * from './dashboardSummary';
 export * from './errorEnvelope';
 export * from './exportAccess';
@@ -20,6 +26,7 @@ export * from './formattingJobPublishingTarget';
 export * from './formattingJobStatus';
 export * from './formattingJobTheme';
 export * from './formattingJobUpdate';
+export * from './getAdminCheck200';
 export * from './healthStatus';
 export * from './jobEditorContent';
 export * from './manuscript';

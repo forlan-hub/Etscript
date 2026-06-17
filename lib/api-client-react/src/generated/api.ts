@@ -21,12 +21,17 @@ import type {
 
 import type {
   ActivityItem,
+  AdminActivityItem,
+  AdminStats,
+  AdminTransaction,
+  AdminUser,
   DashboardSummary,
   ErrorEnvelope,
   ExportAccess,
   FormattingJob,
   FormattingJobInput,
   FormattingJobUpdate,
+  GetAdminCheck200,
   HealthStatus,
   JobEditorContent,
   Manuscript,
@@ -1557,6 +1562,391 @@ export const useDeleteAccount = <TError = ErrorType<ErrorEnvelope>,
       > => {
       return useMutation(getDeleteAccountMutationOptions(options));
     }
+
+export const getGetAdminCheckUrl = () => {
+
+
+
+
+  return `/api/admin/check`
+}
+
+/**
+ * @summary Check whether the current user has admin access
+ */
+export const getAdminCheck = async ( options?: RequestInit): Promise<GetAdminCheck200> => {
+
+  return customFetch<GetAdminCheck200>(getGetAdminCheckUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminCheckQueryKey = () => {
+    return [
+    `/api/admin/check`
+    ] as const;
+    }
+
+
+export const getGetAdminCheckQueryOptions = <TData = Awaited<ReturnType<typeof getAdminCheck>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminCheckQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminCheck>>> = ({ signal }) => getAdminCheck({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminCheck>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminCheckQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminCheck>>>
+export type GetAdminCheckQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether the current user has admin access
+ */
+
+export function useGetAdminCheck<TData = Awaited<ReturnType<typeof getAdminCheck>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminStatsUrl = () => {
+
+
+
+
+  return `/api/admin/stats`
+}
+
+/**
+ * @summary Platform-wide aggregate statistics
+ */
+export const getAdminStats = async ( options?: RequestInit): Promise<AdminStats> => {
+
+  return customFetch<AdminStats>(getGetAdminStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminStatsQueryKey = () => {
+    return [
+    `/api/admin/stats`
+    ] as const;
+    }
+
+
+export const getGetAdminStatsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminStats>>> = ({ signal }) => getAdminStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminStats>>>
+export type GetAdminStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Platform-wide aggregate statistics
+ */
+
+export function useGetAdminStats<TData = Awaited<ReturnType<typeof getAdminStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminUsersUrl = () => {
+
+
+
+
+  return `/api/admin/users`
+}
+
+/**
+ * @summary Per-user rollup for all platform users
+ */
+export const getAdminUsers = async ( options?: RequestInit): Promise<AdminUser[]> => {
+
+  return customFetch<AdminUser[]>(getGetAdminUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminUsersQueryKey = () => {
+    return [
+    `/api/admin/users`
+    ] as const;
+    }
+
+
+export const getGetAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof getAdminUsers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminUsers>>> = ({ signal }) => getAdminUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminUsersQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminUsers>>>
+export type GetAdminUsersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Per-user rollup for all platform users
+ */
+
+export function useGetAdminUsers<TData = Awaited<ReturnType<typeof getAdminUsers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminTransactionsUrl = () => {
+
+
+
+
+  return `/api/admin/transactions`
+}
+
+/**
+ * @summary Recent platform transactions
+ */
+export const getAdminTransactions = async ( options?: RequestInit): Promise<AdminTransaction[]> => {
+
+  return customFetch<AdminTransaction[]>(getGetAdminTransactionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminTransactionsQueryKey = () => {
+    return [
+    `/api/admin/transactions`
+    ] as const;
+    }
+
+
+export const getGetAdminTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminTransactions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminTransactionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminTransactions>>> = ({ signal }) => getAdminTransactions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminTransactions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminTransactions>>>
+export type GetAdminTransactionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Recent platform transactions
+ */
+
+export function useGetAdminTransactions<TData = Awaited<ReturnType<typeof getAdminTransactions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminTransactionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminActivityUrl = () => {
+
+
+
+
+  return `/api/admin/activity`
+}
+
+/**
+ * @summary Recent platform activity log
+ */
+export const getAdminActivity = async ( options?: RequestInit): Promise<AdminActivityItem[]> => {
+
+  return customFetch<AdminActivityItem[]>(getGetAdminActivityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminActivityQueryKey = () => {
+    return [
+    `/api/admin/activity`
+    ] as const;
+    }
+
+
+export const getGetAdminActivityQueryOptions = <TData = Awaited<ReturnType<typeof getAdminActivity>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminActivityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminActivity>>> = ({ signal }) => getAdminActivity({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminActivity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminActivity>>>
+export type GetAdminActivityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Recent platform activity log
+ */
+
+export function useGetAdminActivity<TData = Awaited<ReturnType<typeof getAdminActivity>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminActivityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetStorageLimitsUrl = () => {
 

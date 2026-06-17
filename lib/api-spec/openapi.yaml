@@ -24,6 +24,8 @@ tags:
     description: Object storage upload and serving endpoints
   - name: storage-limits
     description: Plan-based storage and manuscript limits
+  - name: admin
+    description: Admin panel — platform management and analytics
   - name: account
     description: Account and data management
   - name: user-templates
@@ -388,6 +390,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /admin/check:
+    get:
+      operationId: getAdminCheck
+      tags: [admin]
+      summary: Check whether the current user has admin access
+      responses:
+        "200":
+          description: User is an admin
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [isAdmin]
+                properties:
+                  isAdmin:
+                    type: boolean
+        "403":
+          description: Not an admin
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Platform-wide aggregate statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: Per-user rollup for all platform users
+      responses:
+        "200":
+          description: List of admin user rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /admin/transactions:
+    get:
+      operationId: getAdminTransactions
+      tags: [admin]
+      summary: Recent platform transactions
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTransaction"
+
+  /admin/activity:
+    get:
+      operationId: getAdminActivity
+      tags: [admin]
+      summary: Recent platform activity log
+      responses:
+        "200":
+          description: Activity log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminActivityItem"
 
   /storage/limits:
     get:
@@ -881,6 +960,96 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/StorageUploadRequest"
+
+    AdminMonthlyMetric:
+      type: object
+      required: [month, amountKobo]
+      properties:
+        month:
+          type: string
+        amountKobo:
+          type: integer
+
+    AdminStats:
+      type: object
+      required: [totalUsers, totalManuscripts, totalJobs, activePremiumSubs, totalRevenuePaidKobo, recentSignups, monthlyRevenue]
+      properties:
+        totalUsers:
+          type: integer
+        totalManuscripts:
+          type: integer
+        totalJobs:
+          type: integer
+        activePremiumSubs:
+          type: integer
+        totalRevenuePaidKobo:
+          type: integer
+        recentSignups:
+          type: integer
+        monthlyRevenue:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminMonthlyMetric"
+
+    AdminUser:
+      type: object
+      required: [userId, joinedAt, plan, manuscriptCount, jobCount, totalPaidKobo]
+      properties:
+        userId:
+          type: string
+        email:
+          type: ["string", "null"]
+        joinedAt:
+          type: string
+        plan:
+          type: string
+          enum: [free, payg, premium]
+        manuscriptCount:
+          type: integer
+        jobCount:
+          type: integer
+        totalPaidKobo:
+          type: integer
+        lastActivityAt:
+          type: ["string", "null"]
+
+    AdminTransaction:
+      type: object
+      required: [id, userId, reference, type, amount, currency, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        reference:
+          type: string
+        type:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+
+    AdminActivityItem:
+      type: object
+      required: [id, userId, type, description, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        manuscriptTitle:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     StorageLimits:
       type: object
