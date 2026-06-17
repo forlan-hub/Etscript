@@ -5,10 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
-import { User, Mail, Shield, LogOut, CreditCard, Loader2, Sliders } from "lucide-react";
+import { User, Mail, Shield, LogOut, CreditCard, Loader2, Sliders, Trash2 } from "lucide-react";
 import { Link } from "wouter";
-import { useGetSubscription, useCancelSubscription } from "@workspace/api-client-react";
+import { useGetSubscription, useCancelSubscription, useDeleteAccount } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 
 function formatDate(value?: string | null) {
@@ -39,8 +50,27 @@ export default function SettingsPage() {
     });
   };
 
+  const deleteAccount = useDeleteAccount();
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   const isPremium = subscription?.plan === "premium";
   const isCancelled = subscription?.status === "cancelled";
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await deleteAccount.mutateAsync();
+      await signOut();
+    } catch {
+      toast({
+        title: "Could not delete account",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const handleCancel = async () => {
     const ok = window.confirm(
@@ -226,6 +256,49 @@ export default function SettingsPage() {
                 checked={showBranding}
                 onCheckedChange={handleBrandingChange}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="font-serif text-xl flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" /> Danger Zone
+            </CardTitle>
+            <CardDescription>Irreversible account actions</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+              <div>
+                <p className="font-medium text-foreground">Delete My Account</p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Permanently removes your account, all manuscripts, jobs, and preferences. This cannot be undone.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="ml-4 shrink-0" disabled={deletingAccount}>
+                    {deletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Account"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your account and all associated data — manuscripts, formatting jobs, exports, and preferences. This action <strong>cannot be undone</strong>.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Yes, delete my account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>
