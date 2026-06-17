@@ -27,7 +27,55 @@ type JobOptions = {
   pageNumberPosition: string | null;
   chapterNumberStyle: string | null;
   showBranding: boolean | null;
+  citationStyle: string | null;
+  letterData: string | null;
   editedContent?: string | null;
+};
+
+type LetterContent = {
+  letterType: string;
+  date: string;
+  senderName: string;
+  senderTitle: string;
+  senderOrg: string;
+  senderAddress: string;
+  recipientName: string;
+  recipientTitle: string;
+  recipientOrg: string;
+  recipientAddress: string;
+  subject: string;
+  salutation: string;
+  bodyParagraphs: string[];
+  closing: string;
+  signatoryName: string;
+  signatoryTitle: string;
+};
+
+const ACADEMIC_TYPES = new Set([
+  "undergraduate_project", "hnd_project", "masters_thesis", "phd_thesis",
+  "dissertation", "research_paper", "journal_article", "seminar_paper", "conference_paper",
+]);
+
+const BUSINESS_TYPES = new Set([
+  "company_profile", "business_proposal", "business_plan", "feasibility_report",
+  "annual_report", "corporate_training_manual", "internal_report",
+  "consultancy_report", "market_research_report", "strategic_plan",
+]);
+
+function getDocumentSuite(bookType: string | null): "publishing" | "academic" | "business" | "letters" {
+  if (!bookType) return "publishing";
+  if (bookType.startsWith("letter_")) return "letters";
+  if (ACADEMIC_TYPES.has(bookType)) return "academic";
+  if (BUSINESS_TYPES.has(bookType)) return "business";
+  return "publishing";
+}
+
+const CITATION_STYLE_LABELS: Record<string, string> = {
+  apa7: "APA 7th Edition",
+  mla: "MLA",
+  harvard: "Harvard",
+  chicago: "Chicago",
+  ieee: "IEEE",
 };
 
 type ManuscriptInfo = {
@@ -171,6 +219,62 @@ async function downloadManuscriptBuffer(fileKey: string): Promise<Buffer> {
   }
   const [contents] = await objectFile.download();
   return contents;
+}
+
+/**
+ * Parses academic/business documents that use numbered section headings
+ * (e.g. "1.0 Introduction", "1.1 Background", "2.0 Literature Review").
+ * Falls back to the chapter parser when no numbered headings are found.
+ */
+function parseAcademicSections(text: string, title: string): Chapter[] {
+  if (!text.trim()) {
+    return [
+      { title: "1.0 Introduction", paragraphs: SAMPLE_PARAGRAPHS.slice(0, 3) },
+      { title: "2.0 Main Content", paragraphs: SAMPLE_PARAGRAPHS.slice(2) },
+    ];
+  }
+
+  // Matches: "1.0 Title", "1.1 Background", "2.0 Methodology", "ABSTRACT", "REFERENCES"
+  const sectionRegex =
+    /^((\d+\.)+\d*\s+\S|abstract|references?|bibliography|acknowledgements?|appendix\s*\w*|conclusion|introduction|chapter\s+[\w]+|part\s+[\w]+)/im;
+
+  const lines = text.split(/\r?\n/);
+  const chapters: Chapter[] = [];
+  let currentTitle = "";
+  let currentParagraphs: string[] = [];
+  let buffer = "";
+
+  const flushBuffer = () => {
+    const trimmed = buffer.trim();
+    if (trimmed) currentParagraphs.push(trimmed);
+    buffer = "";
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (sectionRegex.test(trimmed)) {
+      flushBuffer();
+      if (currentTitle || currentParagraphs.length > 0) {
+        chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs });
+      }
+      currentTitle = trimmed;
+      currentParagraphs = [];
+    } else if (trimmed === "") {
+      flushBuffer();
+    } else {
+      buffer = buffer ? buffer + " " + trimmed : trimmed;
+    }
+  }
+  flushBuffer();
+  if (currentTitle || currentParagraphs.length > 0) {
+    chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs });
+  }
+
+  if (chapters.length === 0) {
+    return parseChapters(text, title);
+  }
+
+  return chapters;
 }
 
 function parseChapters(text: string, title: string): Chapter[] {
@@ -534,8 +638,9 @@ async function generateDocxBuffer(
   };
   const lineRule = lineSpacingMap[job.lineSpacing ?? ""] ?? 360;
 
+  const suite = getDocumentSuite(job.bookType);
   const bodyAlignment =
-    job.bookType === "business" || job.bookType === "academic"
+    suite === "academic" || suite === "business"
       ? AlignmentType.LEFT
       : AlignmentType.JUSTIFIED;
 
@@ -746,6 +851,311 @@ function buildPreviewHtml(
 </div>`;
 }
 
+// ── Letter formatters ────────────────────────────────────────────────────────
+
+function parseLetterData(raw: string | null): LetterContent | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LetterContent;
+  } catch {
+    return null;
+  }
+}
+
+async function generateLetterPdfBuffer(
+  job: JobOptions,
+  letter: LetterContent,
+  watermark: boolean,
+): Promise<Buffer> {
+  const [width, height] = [595.28, 841.89]; // A4
+  const margin = resolveMargin(job.marginSize);
+  const bodyFont = resolvePdfFont(job.fontFamily);
+  const boldFont =
+    bodyFont === "Times-Roman"
+      ? "Times-Bold"
+      : bodyFont === "Helvetica"
+        ? "Helvetica-Bold"
+        : "Courier-Bold";
+  const fontSize = job.fontSize ?? 12;
+  const lineGap = resolveLineGap("1.5", fontSize);
+  const contentWidth = width - margin * 2;
+
+  const doc = new PDFDocument({
+    size: [width, height],
+    margins: { top: margin, bottom: margin, left: margin, right: margin },
+    bufferPages: true,
+    autoFirstPage: true,
+  });
+
+  const chunks: Buffer[] = [];
+  doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+  // ── Sender block (top-left) ──────────────────────────────────────────────
+  doc.font(boldFont).fontSize(fontSize).text(letter.senderOrg, margin, margin, { width: contentWidth * 0.6 });
+  if (letter.senderName) {
+    doc.font(bodyFont).fontSize(fontSize - 1).text(letter.senderName, { width: contentWidth * 0.6 });
+  }
+  if (letter.senderTitle) {
+    doc.font(bodyFont).fontSize(fontSize - 1).text(letter.senderTitle, { width: contentWidth * 0.6 });
+  }
+  if (letter.senderAddress) {
+    doc.font(bodyFont).fontSize(fontSize - 1).fillColor("#555").text(letter.senderAddress, { width: contentWidth * 0.6 });
+    doc.fillColor("#000");
+  }
+
+  // ── Date (right-aligned) ────────────────────────────────────────────────
+  doc.font(bodyFont).fontSize(fontSize).text(letter.date, margin, margin, {
+    width: contentWidth,
+    align: "right",
+  });
+
+  doc.moveDown(2);
+
+  // ── Recipient block ──────────────────────────────────────────────────────
+  doc.font(boldFont).fontSize(fontSize).text(letter.recipientName, { lineGap: 2 });
+  doc.font(bodyFont);
+  if (letter.recipientTitle) doc.text(letter.recipientTitle, { lineGap: 2 });
+  if (letter.recipientOrg) doc.text(letter.recipientOrg, { lineGap: 2 });
+  if (letter.recipientAddress) doc.fillColor("#555").text(letter.recipientAddress, { lineGap: 2 }).fillColor("#000");
+
+  doc.moveDown(1.2);
+
+  // ── Subject line ─────────────────────────────────────────────────────────
+  doc.font(boldFont).fontSize(fontSize).text(letter.subject);
+  doc.moveDown(0.8);
+
+  // ── Salutation ───────────────────────────────────────────────────────────
+  doc.font(bodyFont).fontSize(fontSize).text(letter.salutation);
+  doc.moveDown(0.5);
+
+  // ── Body paragraphs ──────────────────────────────────────────────────────
+  for (const para of letter.bodyParagraphs) {
+    if (!para.trim()) continue;
+    doc.font(bodyFont).fontSize(fontSize).text(para.trim(), { lineGap, paragraphGap: fontSize * 0.5 });
+    doc.moveDown(0.5);
+  }
+
+  doc.moveDown(0.5);
+
+  // ── Closing ──────────────────────────────────────────────────────────────
+  doc.font(bodyFont).fontSize(fontSize).text(letter.closing);
+  doc.moveDown(3);
+
+  // ── Signatory ────────────────────────────────────────────────────────────
+  doc.font(boldFont).fontSize(fontSize).text(letter.signatoryName);
+  if (letter.signatoryTitle) {
+    doc.font(bodyFont).fontSize(fontSize - 1).fillColor("#555").text(letter.signatoryTitle);
+    doc.fillColor("#000");
+  }
+
+  // ── Attribution + watermark ──────────────────────────────────────────────
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    if (watermark) {
+      doc.save();
+      doc.translate(width / 2, height / 2);
+      doc.rotate(-45);
+      doc.font(boldFont).fontSize(52).fillColor("#c0c0c0").opacity(0.22)
+        .text("PREVIEW", -200, -30, { width: 400, align: "center", lineBreak: false });
+      doc.restore();
+    }
+    if (job.showBranding !== false && i === range.start + range.count - 1) {
+      doc.font(bodyFont).fontSize(7.5).fillColor("#c8c8c8")
+        .text("Formatted with Etscript", margin, height - margin / 2 - 9, { width: contentWidth, align: "center" });
+      doc.fillColor("#000");
+    }
+  }
+
+  return new Promise<Buffer>((resolve, reject) => {
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+    doc.end();
+  });
+}
+
+async function generateLetterDocxBuffer(
+  job: JobOptions,
+  letter: LetterContent,
+  watermark: boolean,
+): Promise<Buffer> {
+  const fontSize = (job.fontSize ?? 12) * 2;
+  const margin = resolveMargin(job.marginSize);
+  const marginTwips = Math.round((margin / 72) * 1440);
+
+  const children: Paragraph[] = [];
+
+  // Sender block
+  children.push(
+    new Paragraph({ children: [new TextRun({ text: letter.senderOrg, bold: true, size: fontSize })] }),
+  );
+  if (letter.senderName) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.senderName, size: fontSize - 2 })] }));
+  }
+  if (letter.senderTitle) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.senderTitle, size: fontSize - 2 })] }));
+  }
+  if (letter.senderAddress) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.senderAddress, size: fontSize - 2, color: "555555" })] }));
+  }
+
+  // Date (right-aligned)
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      children: [new TextRun({ text: letter.date, size: fontSize })],
+      spacing: { before: 240, after: 480 },
+    }),
+  );
+
+  // Recipient block
+  children.push(
+    new Paragraph({ children: [new TextRun({ text: letter.recipientName, bold: true, size: fontSize })] }),
+  );
+  if (letter.recipientTitle) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.recipientTitle, size: fontSize })] }));
+  }
+  if (letter.recipientOrg) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.recipientOrg, size: fontSize })] }));
+  }
+  if (letter.recipientAddress) {
+    children.push(new Paragraph({ children: [new TextRun({ text: letter.recipientAddress, size: fontSize, color: "555555" })] }));
+  }
+
+  // Subject line
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: letter.subject, bold: true, size: fontSize })],
+      spacing: { before: 360, after: 240 },
+    }),
+  );
+
+  // Salutation
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: letter.salutation, size: fontSize })],
+      spacing: { after: 240 },
+    }),
+  );
+
+  // Body paragraphs
+  for (const para of letter.bodyParagraphs) {
+    if (!para.trim()) continue;
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [new TextRun({ text: para.trim(), size: fontSize })],
+        spacing: { line: 360, after: 240 },
+      }),
+    );
+  }
+
+  // Closing
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: letter.closing, size: fontSize })],
+      spacing: { before: 360, after: 960 },
+    }),
+  );
+
+  // Signatory
+  children.push(
+    new Paragraph({ children: [new TextRun({ text: letter.signatoryName, bold: true, size: fontSize })] }),
+  );
+  if (letter.signatoryTitle) {
+    children.push(
+      new Paragraph({ children: [new TextRun({ text: letter.signatoryTitle, size: fontSize - 2, color: "555555" })] }),
+    );
+  }
+
+  if (job.showBranding !== false) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "Formatted with Etscript", size: 16, color: "C8C8C8" })],
+        spacing: { before: 960 },
+      }),
+    );
+  }
+
+  const footerChildren: Paragraph[] = [];
+  if (watermark) {
+    footerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "PREVIEW — Purchase to remove this watermark", size: 20, color: "BBBBBB", bold: true })],
+      }),
+    );
+  }
+
+  const docx = new Document({
+    sections: [{
+      properties: {
+        type: SectionType.CONTINUOUS,
+        page: { margin: { top: marginTwips, bottom: marginTwips, left: marginTwips, right: marginTwips } },
+      },
+      footers: footerChildren.length > 0 ? { default: new Footer({ children: footerChildren }) } : undefined,
+      children,
+    }],
+  });
+
+  return Packer.toBuffer(docx);
+}
+
+function buildLetterPreviewHtml(letter: LetterContent, job: JobOptions): string {
+  const font = job.fontFamily ?? "Times New Roman";
+  const fontSize = job.fontSize ?? 12;
+
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const senderBlock = [
+    `<strong>${esc(letter.senderOrg)}</strong>`,
+    letter.senderName ? esc(letter.senderName) : "",
+    letter.senderTitle ? esc(letter.senderTitle) : "",
+    letter.senderAddress ? `<span style="color:#666">${esc(letter.senderAddress)}</span>` : "",
+  ]
+    .filter(Boolean)
+    .map((l) => `<div>${l}</div>`)
+    .join("");
+
+  const recipientBlock = [
+    `<strong>${esc(letter.recipientName)}</strong>`,
+    letter.recipientTitle ? esc(letter.recipientTitle) : "",
+    letter.recipientOrg ? esc(letter.recipientOrg) : "",
+    letter.recipientAddress ? `<span style="color:#666">${esc(letter.recipientAddress)}</span>` : "",
+  ]
+    .filter(Boolean)
+    .map((l) => `<div>${l}</div>`)
+    .join("");
+
+  const bodyHtml = letter.bodyParagraphs
+    .map((p) => `<p style="margin:0 0 0.8em;text-align:justify">${esc(p)}</p>`)
+    .join("");
+
+  const brandingHtml =
+    job.showBranding !== false
+      ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:2em 0 0">Formatted with Etscript</p>`
+      : "";
+
+  return `
+<div style="max-width:520px;margin:0 auto;padding:2em;font-family:${esc(font)},serif;font-size:${fontSize}px;line-height:1.6">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2em">
+    <div style="font-size:${fontSize}px">${senderBlock}</div>
+    <div style="font-size:${fontSize}px;text-align:right">${esc(letter.date)}</div>
+  </div>
+  <div style="margin-bottom:1.5em;font-size:${fontSize}px">${recipientBlock}</div>
+  <p style="font-weight:bold;margin:0 0 1em;font-size:${fontSize}px">${esc(letter.subject)}</p>
+  <p style="margin:0 0 0.8em;font-size:${fontSize}px">${esc(letter.salutation)}</p>
+  <div style="font-size:${fontSize}px">${bodyHtml}</div>
+  <p style="margin:1.5em 0 3em;font-size:${fontSize}px">${esc(letter.closing)}</p>
+  <div style="font-size:${fontSize}px">
+    <strong>${esc(letter.signatoryName)}</strong>
+    ${letter.signatoryTitle ? `<div style="color:#555;font-size:${fontSize - 1}px">${esc(letter.signatoryTitle)}</div>` : ""}
+  </div>
+  ${brandingHtml}
+</div>`;
+}
+
 /** Parse TipTap-generated HTML back into chapters. */
 function parseHtmlToChapters(html: string): Chapter[] {
   const decode = (s: string): string =>
@@ -816,6 +1226,20 @@ export async function generateFormattedFiles(
   job: JobOptions,
   manuscript: ManuscriptInfo,
 ): Promise<FormattedResult> {
+  const suite = getDocumentSuite(job.bookType);
+
+  // ── Letter suite: use structured letter data, no manuscript file needed ──
+  if (suite === "letters") {
+    const letter = parseLetterData(job.letterData);
+    const previewHtml = letter
+      ? buildLetterPreviewHtml(letter, job)
+      : `<p style="color:#999;font-style:italic;padding:2em">Letter data not found.</p>`;
+    const wordCount = letter
+      ? letter.bodyParagraphs.join(" ").split(/\s+/).filter(Boolean).length
+      : 0;
+    return { pdfKey: outputFileKey(job.id, "pdf"), docxKey: outputFileKey(job.id, "docx"), previewHtml, wordCount };
+  }
+
   let chapters: Chapter[];
   let wordCount = 0;
 
@@ -837,7 +1261,10 @@ export async function generateFormattedFiles(
       }
     }
     wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
-    chapters = parseChapters(rawText, manuscript.title);
+    chapters =
+      suite === "academic" || suite === "business"
+        ? parseAcademicSections(rawText, manuscript.title)
+        : parseChapters(rawText, manuscript.title);
   }
 
   const previewHtml = buildPreviewHtml(manuscript, chapters, job);
@@ -858,6 +1285,17 @@ export async function generateDocumentBuffer(
   format: DocumentFormat,
   opts: { watermark: boolean },
 ): Promise<Buffer> {
+  const suite = getDocumentSuite(job.bookType);
+
+  // ── Letter suite: generate from structured letter data ───────────────────
+  if (suite === "letters") {
+    const letter = parseLetterData(job.letterData);
+    if (!letter) throw new Error("Letter data missing or malformed");
+    return format === "pdf"
+      ? generateLetterPdfBuffer(job, letter, opts.watermark)
+      : generateLetterDocxBuffer(job, letter, opts.watermark);
+  }
+
   let chapters: Chapter[];
 
   if (job.editedContent) {
@@ -868,7 +1306,10 @@ export async function generateDocumentBuffer(
       const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
       rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename ?? "");
     }
-    chapters = parseChapters(rawText, manuscript.title);
+    chapters =
+      suite === "academic" || suite === "business"
+        ? parseAcademicSections(rawText, manuscript.title)
+        : parseChapters(rawText, manuscript.title);
   }
 
   return format === "pdf"

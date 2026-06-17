@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { useGetDashboardSummary, useGetRecentActivity, useListManuscripts } from "@workspace/api-client-react";
-import { FileText, Clock, CheckCircle, Plus, Book, FileUp } from "lucide-react";
+import { FileText, Clock, CheckCircle, Plus, Book, FileUp, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,11 +16,18 @@ export default function DashboardPage() {
     <AppLayout 
       title="Dashboard" 
       actions={
-        <Link href="/upload">
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" /> New Manuscript
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/letters/new">
+            <Button variant="outline" className="gap-2">
+              <Mail className="w-4 h-4" /> New Letter
+            </Button>
+          </Link>
+          <Link href="/upload">
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" /> New Manuscript
+            </Button>
+          </Link>
+        </div>
       }
     >
       <div className="grid gap-6">

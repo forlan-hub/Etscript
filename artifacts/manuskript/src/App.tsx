@@ -18,6 +18,7 @@ import PricingPage from "./pages/pricing";
 import SettingsPage from "./pages/settings";
 import PaymentCallbackPage from "./pages/payment-callback";
 import SignInPage from "./pages/sign-in";
+import LettersPage from "./pages/letters";
 import NotFoundPage from "./pages/not-found";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,9 @@ function AppRoutes() {
       </Route>
       <Route path="/payment/callback">
         <ProtectedRoute component={PaymentCallbackPage} />
+      </Route>
+      <Route path="/letters/new">
+        <ProtectedRoute component={LettersPage} />
       </Route>
       <Route component={NotFoundPage} />
     </Switch>
