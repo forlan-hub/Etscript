@@ -58,25 +58,6 @@ export interface UploadUrlResponse {
 /**
  * @nullable
  */
-export type FormattingJobBookType = typeof FormattingJobBookType[keyof typeof FormattingJobBookType] | null;
-
-
-export const FormattingJobBookType = {
-  novel: 'novel',
-  memoir: 'memoir',
-  autobiography: 'autobiography',
-  motivational: 'motivational',
-  self_help: 'self_help',
-  business: 'business',
-  christian: 'christian',
-  training_manual: 'training_manual',
-  workbook: 'workbook',
-  academic: 'academic',
-} as const;
-
-/**
- * @nullable
- */
 export type FormattingJobPublishingTarget = typeof FormattingJobPublishingTarget[keyof typeof FormattingJobPublishingTarget] | null;
 
 
@@ -144,7 +125,7 @@ export interface FormattingJob {
   id: number;
   manuscriptId: number;
   /** @nullable */
-  bookType?: FormattingJobBookType;
+  bookType?: string | null;
   /** @nullable */
   publishingTarget?: FormattingJobPublishingTarget;
   /** @nullable */
@@ -162,6 +143,10 @@ export interface FormattingJob {
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
   showBranding?: boolean;
+  /** @nullable */
+  citationStyle?: string | null;
+  /** @nullable */
+  letterData?: string | null;
   /** @nullable */
   editedContent?: string | null;
   status: FormattingJobStatus;
@@ -194,6 +179,8 @@ export interface FormattingJobUpdate {
   pageNumberPosition?: string;
   chapterNumberStyle?: string;
   showBranding?: boolean;
+  citationStyle?: string;
+  letterData?: string;
   editedContent?: string;
 }
 

@@ -5,7 +5,6 @@
  * Etscript API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { FormattingJobBookType } from './formattingJobBookType';
 import type { FormattingJobChapterNumberStyle } from './formattingJobChapterNumberStyle';
 import type { FormattingJobPageNumberPosition } from './formattingJobPageNumberPosition';
 import type { FormattingJobPublishingTarget } from './formattingJobPublishingTarget';
@@ -17,7 +16,7 @@ export interface FormattingJob {
   id: number;
   manuscriptId: number;
   /** @nullable */
-  bookType?: FormattingJobBookType;
+  bookType?: string | null;
   /** @nullable */
   publishingTarget?: FormattingJobPublishingTarget;
   /** @nullable */
@@ -35,6 +34,10 @@ export interface FormattingJob {
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
   showBranding?: boolean;
+  /** @nullable */
+  citationStyle?: string | null;
+  /** @nullable */
+  letterData?: string | null;
   /** @nullable */
   editedContent?: string | null;
   status: FormattingJobStatus;

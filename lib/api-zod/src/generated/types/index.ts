@@ -13,7 +13,6 @@ export * from './errorEnvelope';
 export * from './exportAccess';
 export * from './exportAccessPlan';
 export * from './formattingJob';
-export * from './formattingJobBookType';
 export * from './formattingJobChapterNumberStyle';
 export * from './formattingJobInput';
 export * from './formattingJobPageNumberPosition';

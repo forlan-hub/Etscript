@@ -560,7 +560,6 @@ components:
           type: integer
         bookType:
           type: ["string", "null"]
-          enum: [novel, memoir, autobiography, motivational, self_help, business, christian, training_manual, workbook, academic, null]
         publishingTarget:
           type: ["string", "null"]
           enum: [amazon_kdp_paperback, amazon_kdp_hardcover, a4_print, ebook, corporate_manual, null]
@@ -584,6 +583,10 @@ components:
         showBranding:
           type: boolean
           default: true
+        citationStyle:
+          type: ["string", "null"]
+        letterData:
+          type: ["string", "null"]
         editedContent:
           type: ["string", "null"]
         status:
@@ -638,6 +641,10 @@ components:
           type: string
         showBranding:
           type: boolean
+        citationStyle:
+          type: string
+        letterData:
+          type: string
         editedContent:
           type: string
 

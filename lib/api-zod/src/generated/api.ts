@@ -106,7 +106,7 @@ export const listJobsResponseShowBrandingDefault = true;
 export const ListJobsResponseItem = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
-  "bookType": zod.union([zod.literal('novel'),zod.literal('memoir'),zod.literal('autobiography'),zod.literal('motivational'),zod.literal('self_help'),zod.literal('business'),zod.literal('christian'),zod.literal('training_manual'),zod.literal('workbook'),zod.literal('academic'),zod.literal(null)]).nullish(),
+  "bookType": zod.string().nullish(),
   "publishingTarget": zod.union([zod.literal('amazon_kdp_paperback'),zod.literal('amazon_kdp_hardcover'),zod.literal('a4_print'),zod.literal('ebook'),zod.literal('corporate_manual'),zod.literal(null)]).nullish(),
   "theme": zod.union([zod.literal('classic'),zod.literal('modern'),zod.literal('premium'),zod.literal('corporate'),zod.literal('academic'),zod.literal(null)]).nullish(),
   "fontFamily": zod.string().nullish(),
@@ -116,6 +116,8 @@ export const ListJobsResponseItem = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(listJobsResponseShowBrandingDefault),
+  "citationStyle": zod.string().nullish(),
+  "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
@@ -162,7 +164,7 @@ export const getJobResponseShowBrandingDefault = true;
 export const GetJobResponse = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
-  "bookType": zod.union([zod.literal('novel'),zod.literal('memoir'),zod.literal('autobiography'),zod.literal('motivational'),zod.literal('self_help'),zod.literal('business'),zod.literal('christian'),zod.literal('training_manual'),zod.literal('workbook'),zod.literal('academic'),zod.literal(null)]).nullish(),
+  "bookType": zod.string().nullish(),
   "publishingTarget": zod.union([zod.literal('amazon_kdp_paperback'),zod.literal('amazon_kdp_hardcover'),zod.literal('a4_print'),zod.literal('ebook'),zod.literal('corporate_manual'),zod.literal(null)]).nullish(),
   "theme": zod.union([zod.literal('classic'),zod.literal('modern'),zod.literal('premium'),zod.literal('corporate'),zod.literal('academic'),zod.literal(null)]).nullish(),
   "fontFamily": zod.string().nullish(),
@@ -172,6 +174,8 @@ export const GetJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(getJobResponseShowBrandingDefault),
+  "citationStyle": zod.string().nullish(),
+  "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
@@ -212,6 +216,8 @@ export const UpdateJobBody = zod.object({
   "pageNumberPosition": zod.string().optional(),
   "chapterNumberStyle": zod.string().optional(),
   "showBranding": zod.boolean().optional(),
+  "citationStyle": zod.string().optional(),
+  "letterData": zod.string().optional(),
   "editedContent": zod.string().optional()
 })
 
@@ -220,7 +226,7 @@ export const updateJobResponseShowBrandingDefault = true;
 export const UpdateJobResponse = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
-  "bookType": zod.union([zod.literal('novel'),zod.literal('memoir'),zod.literal('autobiography'),zod.literal('motivational'),zod.literal('self_help'),zod.literal('business'),zod.literal('christian'),zod.literal('training_manual'),zod.literal('workbook'),zod.literal('academic'),zod.literal(null)]).nullish(),
+  "bookType": zod.string().nullish(),
   "publishingTarget": zod.union([zod.literal('amazon_kdp_paperback'),zod.literal('amazon_kdp_hardcover'),zod.literal('a4_print'),zod.literal('ebook'),zod.literal('corporate_manual'),zod.literal(null)]).nullish(),
   "theme": zod.union([zod.literal('classic'),zod.literal('modern'),zod.literal('premium'),zod.literal('corporate'),zod.literal('academic'),zod.literal(null)]).nullish(),
   "fontFamily": zod.string().nullish(),
@@ -230,6 +236,8 @@ export const UpdateJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(updateJobResponseShowBrandingDefault),
+  "citationStyle": zod.string().nullish(),
+  "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
@@ -264,7 +272,7 @@ export const processJobResponseShowBrandingDefault = true;
 export const ProcessJobResponse = zod.object({
   "id": zod.number(),
   "manuscriptId": zod.number(),
-  "bookType": zod.union([zod.literal('novel'),zod.literal('memoir'),zod.literal('autobiography'),zod.literal('motivational'),zod.literal('self_help'),zod.literal('business'),zod.literal('christian'),zod.literal('training_manual'),zod.literal('workbook'),zod.literal('academic'),zod.literal(null)]).nullish(),
+  "bookType": zod.string().nullish(),
   "publishingTarget": zod.union([zod.literal('amazon_kdp_paperback'),zod.literal('amazon_kdp_hardcover'),zod.literal('a4_print'),zod.literal('ebook'),zod.literal('corporate_manual'),zod.literal(null)]).nullish(),
   "theme": zod.union([zod.literal('classic'),zod.literal('modern'),zod.literal('premium'),zod.literal('corporate'),zod.literal('academic'),zod.literal(null)]).nullish(),
   "fontFamily": zod.string().nullish(),
@@ -274,6 +282,8 @@ export const ProcessJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(processJobResponseShowBrandingDefault),
+  "citationStyle": zod.string().nullish(),
+  "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
   "status": zod.enum(['draft', 'processing', 'completed', 'error']),
   "outputPdfKey": zod.string().nullish(),
