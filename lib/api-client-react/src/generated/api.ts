@@ -35,6 +35,7 @@ import type {
   PaymentCheckoutInput,
   PaymentVerification,
   ReadinessReport,
+  StorageLimits,
   StorageUploadRequest,
   StorageUploadResponse,
   SubscriptionStatus,
@@ -1556,6 +1557,83 @@ export const useDeleteAccount = <TError = ErrorType<ErrorEnvelope>,
       > => {
       return useMutation(getDeleteAccountMutationOptions(options));
     }
+
+export const getGetStorageLimitsUrl = () => {
+
+
+
+
+  return `/api/storage/limits`
+}
+
+/**
+ * @summary Get current user's storage usage and plan limits
+ */
+export const getStorageLimits = async ( options?: RequestInit): Promise<StorageLimits> => {
+
+  return customFetch<StorageLimits>(getGetStorageLimitsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorageLimitsQueryKey = () => {
+    return [
+    `/api/storage/limits`
+    ] as const;
+    }
+
+
+export const getGetStorageLimitsQueryOptions = <TData = Awaited<ReturnType<typeof getStorageLimits>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageLimits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorageLimitsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorageLimits>>> = ({ signal }) => getStorageLimits({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorageLimits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorageLimitsQueryResult = NonNullable<Awaited<ReturnType<typeof getStorageLimits>>>
+export type GetStorageLimitsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get current user's storage usage and plan limits
+ */
+
+export function useGetStorageLimits<TData = Awaited<ReturnType<typeof getStorageLimits>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageLimits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorageLimitsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListUserTemplatesUrl = () => {
 

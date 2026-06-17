@@ -5,11 +5,96 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { useLocation } from "wouter";
-import { useCreateManuscript, useCreateJob, useGetUploadUrl } from "@workspace/api-client-react";
-import { UploadCloud, File, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useLocation, Link } from "wouter";
+import {
+  useCreateManuscript,
+  useCreateJob,
+  useGetUploadUrl,
+  useGetStorageLimits,
+} from "@workspace/api-client-react";
+import { UploadCloud, File, AlertCircle, CheckCircle2, HardDrive, BookOpen, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowStepper } from "@/components/workflow-stepper";
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  payg: "Pay-As-You-Go",
+  premium: "Premium",
+};
+
+function StorageUsageBar({ plan, usedManuscripts, maxManuscripts, usedStorageBytes, maxStorageBytes }: {
+  plan: string;
+  usedManuscripts: number;
+  maxManuscripts: number;
+  usedStorageBytes: number;
+  maxStorageBytes: number;
+}) {
+  const msPercent = Math.min(100, (usedManuscripts / maxManuscripts) * 100);
+  const storagePercent = Math.min(100, (usedStorageBytes / maxStorageBytes) * 100);
+  const atManuscriptLimit = usedManuscripts >= maxManuscripts;
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <HardDrive className="w-4 h-4 text-muted-foreground" />
+          Storage &amp; limits
+        </div>
+        <Badge variant={plan === "premium" ? "default" : "secondary"} className="text-xs">
+          {PLAN_LABELS[plan] ?? plan}
+        </Badge>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <BookOpen className="w-3 h-3" />
+            Manuscripts
+          </span>
+          <span className={atManuscriptLimit ? "text-destructive font-medium" : ""}>
+            {usedManuscripts} / {maxManuscripts}
+          </span>
+        </div>
+        <Progress
+          value={msPercent}
+          className={`h-1.5 ${atManuscriptLimit ? "[&>div]:bg-destructive" : ""}`}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <HardDrive className="w-3 h-3" />
+            Storage
+          </span>
+          <span>{formatBytes(usedStorageBytes)} / {formatBytes(maxStorageBytes)}</span>
+        </div>
+        <Progress value={storagePercent} className="h-1.5" />
+      </div>
+
+      {atManuscriptLimit && (
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-xs text-destructive">
+            Manuscript limit reached. Delete one or upgrade your plan.
+          </p>
+          <Link href="/pricing">
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+              Upgrade <ArrowRight className="w-3 h-3" />
+            </Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function UploadPage() {
   const [, setLocation] = useLocation();
@@ -23,6 +108,10 @@ export default function UploadPage() {
   const createManuscript = useCreateManuscript();
   const getUploadUrl = useGetUploadUrl();
   const createJob = useCreateJob();
+  const { data: storageLimits } = useGetStorageLimits();
+
+  const atManuscriptLimit =
+    storageLimits != null && storageLimits.usedManuscripts >= storageLimits.maxManuscripts;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -103,11 +192,18 @@ export default function UploadPage() {
 
       await new Promise((r) => setTimeout(r, 500));
       setLocation(`/format/${job.id}`);
-    } catch (error) {
-      console.error(error);
+    } catch (error: unknown) {
       setStep("idle");
       setUploadProgress(0);
-      toast({ title: "Upload failed", description: "There was an error uploading your manuscript.", variant: "destructive" });
+
+      let description = "There was an error uploading your manuscript.";
+      if (error && typeof error === "object" && "response" in error) {
+        const resp = error as { response?: { data?: { error?: string } } };
+        if (resp.response?.data?.error) {
+          description = resp.response.data.error;
+        }
+      }
+      toast({ title: "Upload failed", description, variant: "destructive" });
     }
   };
 
@@ -115,8 +211,18 @@ export default function UploadPage() {
 
   return (
     <AppLayout title="New Manuscript">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-5">
         <WorkflowStepper currentStep={1} />
+
+        {storageLimits && (
+          <StorageUsageBar
+            plan={storageLimits.plan}
+            usedManuscripts={storageLimits.usedManuscripts}
+            maxManuscripts={storageLimits.maxManuscripts}
+            usedStorageBytes={storageLimits.usedStorageBytes}
+            maxStorageBytes={storageLimits.maxStorageBytes}
+          />
+        )}
 
         <Card>
           <CardHeader>
@@ -199,7 +305,11 @@ export default function UploadPage() {
               )}
 
               <div className="pt-4 flex justify-end">
-                <Button type="submit" disabled={isLoading || !file || !title.trim()} className="px-8">
+                <Button
+                  type="submit"
+                  disabled={isLoading || !file || !title.trim() || atManuscriptLimit}
+                  className="px-8"
+                >
                   {isLoading ? "Processing…" : "Continue to Setup"}
                 </Button>
               </div>

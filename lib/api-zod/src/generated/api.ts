@@ -413,6 +413,18 @@ export const GetSubscriptionResponse = zod.object({
 
 
 /**
+ * @summary Get current user's storage usage and plan limits
+ */
+export const GetStorageLimitsResponse = zod.object({
+  "plan": zod.enum(['free', 'payg', 'premium']),
+  "maxManuscripts": zod.number(),
+  "maxStorageBytes": zod.number(),
+  "usedManuscripts": zod.number(),
+  "usedStorageBytes": zod.number()
+})
+
+
+/**
  * @summary List saved formatting templates for the current user
  */
 export const ListUserTemplatesResponseItem = zod.object({

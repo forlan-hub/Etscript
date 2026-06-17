@@ -22,6 +22,8 @@ tags:
     description: Subscription status and management
   - name: storage
     description: Object storage upload and serving endpoints
+  - name: storage-limits
+    description: Plan-based storage and manuscript limits
   - name: account
     description: Account and data management
   - name: user-templates
@@ -386,6 +388,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /storage/limits:
+    get:
+      operationId: getStorageLimits
+      tags: [storage-limits]
+      summary: Get current user's storage usage and plan limits
+      responses:
+        "200":
+          description: Storage limits and current usage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageLimits"
 
   /user-templates:
     get:
@@ -866,6 +881,22 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/StorageUploadRequest"
+
+    StorageLimits:
+      type: object
+      required: [plan, maxManuscripts, maxStorageBytes, usedManuscripts, usedStorageBytes]
+      properties:
+        plan:
+          type: string
+          enum: [free, payg, premium]
+        maxManuscripts:
+          type: integer
+        maxStorageBytes:
+          type: integer
+        usedManuscripts:
+          type: integer
+        usedStorageBytes:
+          type: integer
 
     UserTemplate:
       type: object

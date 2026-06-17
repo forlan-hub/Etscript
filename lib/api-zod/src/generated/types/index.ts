@@ -34,6 +34,8 @@ export * from './paymentVerificationType';
 export * from './readinessItem';
 export * from './readinessItemSeverity';
 export * from './readinessReport';
+export * from './storageLimits';
+export * from './storageLimitsPlan';
 export * from './storageUploadRequest';
 export * from './storageUploadResponse';
 export * from './subscriptionStatus';

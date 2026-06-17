@@ -321,6 +321,23 @@ export interface StorageUploadResponse {
   metadata?: StorageUploadRequest;
 }
 
+export type StorageLimitsPlan = typeof StorageLimitsPlan[keyof typeof StorageLimitsPlan];
+
+
+export const StorageLimitsPlan = {
+  free: 'free',
+  payg: 'payg',
+  premium: 'premium',
+} as const;
+
+export interface StorageLimits {
+  plan: StorageLimitsPlan;
+  maxManuscripts: number;
+  maxStorageBytes: number;
+  usedManuscripts: number;
+  usedStorageBytes: number;
+}
+
 export interface UserTemplate {
   id: number;
   userId: string;

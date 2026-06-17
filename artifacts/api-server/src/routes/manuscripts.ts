@@ -11,6 +11,7 @@ import {
   GetUploadUrlBody,
 } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { getStorageTier, PLAN_LIMITS } from "../lib/entitlements";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -32,6 +33,22 @@ router.post("/manuscripts", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+
+  const [tier, existing] = await Promise.all([
+    getStorageTier(userId),
+    db.select({ id: manuscriptsTable.id }).from(manuscriptsTable).where(eq(manuscriptsTable.userId, userId)),
+  ]);
+  const limits = PLAN_LIMITS[tier];
+
+  if (existing.length >= limits.maxManuscripts) {
+    const label = limits.maxManuscripts === 1 ? "manuscript" : "manuscripts";
+    res.status(403).json({
+      error: `Your ${tier} plan allows up to ${limits.maxManuscripts} ${label}. Delete one or upgrade to add more.`,
+      code: "MANUSCRIPT_LIMIT_REACHED",
+    });
+    return;
+  }
+
   const [manuscript] = await db
     .insert(manuscriptsTable)
     .values({ ...parsed.data, userId })
@@ -99,6 +116,34 @@ router.post("/manuscripts/:id/upload-url", requireAuth, async (req, res): Promis
   if (!manuscript) {
     res.status(404).json({ error: "Not found" });
     return;
+  }
+
+  const newFileSize = bodyParsed.data.fileSize ?? 0;
+
+  if (newFileSize > 0) {
+    const [tier, allManuscripts] = await Promise.all([
+      getStorageTier(userId),
+      db.select({ id: manuscriptsTable.id, fileSize: manuscriptsTable.fileSize })
+        .from(manuscriptsTable)
+        .where(eq(manuscriptsTable.userId, userId)),
+    ]);
+    const limits = PLAN_LIMITS[tier];
+
+    const usedBytes = allManuscripts
+      .filter((m) => m.id !== idParsed.data.id)
+      .reduce((sum, m) => sum + (m.fileSize ?? 0), 0);
+
+    if (usedBytes + newFileSize > limits.maxStorageBytes) {
+      const mbLimit = Math.round(limits.maxStorageBytes / (1024 * 1024));
+      const gbLimit = limits.maxStorageBytes >= 1024 * 1024 * 1024
+        ? `${limits.maxStorageBytes / (1024 * 1024 * 1024)} GB`
+        : `${mbLimit} MB`;
+      res.status(403).json({
+        error: `Storage limit reached. Your ${tier} plan allows ${gbLimit} total. Free up space or upgrade.`,
+        code: "STORAGE_LIMIT_REACHED",
+      });
+      return;
+    }
   }
 
   const uploadUrl = await objectStorageService.getObjectEntityUploadURL();

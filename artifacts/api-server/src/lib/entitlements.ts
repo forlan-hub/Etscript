@@ -69,3 +69,39 @@ export async function getCleanAccess(
     jobPaid,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Storage / manuscript limits
+// ---------------------------------------------------------------------------
+
+export type StorageTier = "free" | "payg" | "premium";
+
+export const PLAN_LIMITS: Record<StorageTier, { maxManuscripts: number; maxStorageBytes: number }> = {
+  free:    { maxManuscripts: 1,  maxStorageBytes: 20  * 1024 * 1024 },
+  payg:    { maxManuscripts: 3,  maxStorageBytes: 100 * 1024 * 1024 },
+  premium: { maxManuscripts: 50, maxStorageBytes: 5   * 1024 * 1024 * 1024 },
+};
+
+/**
+ * Determines the user's storage tier:
+ * - premium: has an active subscription
+ * - payg: has at least one successful pay-as-you-go export transaction
+ * - free: neither
+ */
+export async function getStorageTier(userId: string): Promise<StorageTier> {
+  if (await isPremium(userId)) return "premium";
+
+  const [txn] = await db
+    .select({ id: transactionsTable.id })
+    .from(transactionsTable)
+    .where(
+      and(
+        eq(transactionsTable.userId, userId),
+        eq(transactionsTable.type, "payg_export"),
+        eq(transactionsTable.status, "success"),
+      ),
+    )
+    .limit(1);
+
+  return txn ? "payg" : "free";
+}
