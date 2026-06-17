@@ -19,6 +19,10 @@ import SettingsPage from "./pages/settings";
 import PaymentCallbackPage from "./pages/payment-callback";
 import SignInPage from "./pages/sign-in";
 import LettersPage from "./pages/letters";
+import ToolsPage from "./pages/tools";
+import ToolsCitationPage from "./pages/tools-citation";
+import ToolsIsbnPage from "./pages/tools-isbn";
+import ToolsMyTemplatesPage from "./pages/tools-my-templates";
 import NotFoundPage from "./pages/not-found";
 
 const queryClient = new QueryClient();
@@ -74,6 +78,18 @@ function AppRoutes() {
       </Route>
       <Route path="/letters/new">
         <ProtectedRoute component={LettersPage} />
+      </Route>
+      <Route path="/tools">
+        <ProtectedRoute component={ToolsPage} />
+      </Route>
+      <Route path="/tools/citation">
+        <ProtectedRoute component={ToolsCitationPage} />
+      </Route>
+      <Route path="/tools/isbn">
+        <ProtectedRoute component={ToolsIsbnPage} />
+      </Route>
+      <Route path="/tools/my-templates">
+        <ProtectedRoute component={ToolsMyTemplatesPage} />
       </Route>
       <Route component={NotFoundPage} />
     </Switch>

@@ -40,4 +40,7 @@ export * from './subscriptionStatus';
 export * from './subscriptionStatusPlan';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
+export * from './userTemplate';
+export * from './userTemplateCreate';
+export * from './userTemplateUpdate';
 export * from './verifyPaymentParams';

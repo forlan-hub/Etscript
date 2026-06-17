@@ -413,6 +413,103 @@ export const GetSubscriptionResponse = zod.object({
 
 
 /**
+ * @summary List saved formatting templates for the current user
+ */
+export const ListUserTemplatesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "bookType": zod.string().nullish(),
+  "publishingTarget": zod.string().nullish(),
+  "theme": zod.string().nullish(),
+  "fontFamily": zod.string().nullish(),
+  "fontSize": zod.number().nullish(),
+  "lineSpacing": zod.string().nullish(),
+  "marginSize": zod.string().nullish(),
+  "pageNumberPosition": zod.string().nullish(),
+  "chapterNumberStyle": zod.string().nullish(),
+  "citationStyle": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListUserTemplatesResponse = zod.array(ListUserTemplatesResponseItem)
+
+
+/**
+ * @summary Save a new formatting template
+ */
+export const createUserTemplateBodyNameMax = 80;
+
+
+
+export const CreateUserTemplateBody = zod.object({
+  "name": zod.string().min(1).max(createUserTemplateBodyNameMax),
+  "bookType": zod.string().optional(),
+  "publishingTarget": zod.string().optional(),
+  "theme": zod.string().optional(),
+  "fontFamily": zod.string().optional(),
+  "fontSize": zod.number().optional(),
+  "lineSpacing": zod.string().optional(),
+  "marginSize": zod.string().optional(),
+  "pageNumberPosition": zod.string().optional(),
+  "chapterNumberStyle": zod.string().optional(),
+  "citationStyle": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a saved template
+ */
+export const UpdateUserTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateUserTemplateBodyNameMax = 80;
+
+
+
+export const UpdateUserTemplateBody = zod.object({
+  "name": zod.string().min(1).max(updateUserTemplateBodyNameMax).optional(),
+  "bookType": zod.string().optional(),
+  "publishingTarget": zod.string().optional(),
+  "theme": zod.string().optional(),
+  "fontFamily": zod.string().optional(),
+  "fontSize": zod.number().optional(),
+  "lineSpacing": zod.string().optional(),
+  "marginSize": zod.string().optional(),
+  "pageNumberPosition": zod.string().optional(),
+  "chapterNumberStyle": zod.string().optional(),
+  "citationStyle": zod.string().optional()
+})
+
+export const UpdateUserTemplateResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "bookType": zod.string().nullish(),
+  "publishingTarget": zod.string().nullish(),
+  "theme": zod.string().nullish(),
+  "fontFamily": zod.string().nullish(),
+  "fontSize": zod.number().nullish(),
+  "lineSpacing": zod.string().nullish(),
+  "marginSize": zod.string().nullish(),
+  "pageNumberPosition": zod.string().nullish(),
+  "chapterNumberStyle": zod.string().nullish(),
+  "citationStyle": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a saved template
+ */
+export const DeleteUserTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Cancel the current user's premium subscription
  */
 export const CancelSubscriptionResponse = zod.object({

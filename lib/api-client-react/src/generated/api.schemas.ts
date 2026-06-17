@@ -321,6 +321,70 @@ export interface StorageUploadResponse {
   metadata?: StorageUploadRequest;
 }
 
+export interface UserTemplate {
+  id: number;
+  userId: string;
+  name: string;
+  /** @nullable */
+  bookType?: string | null;
+  /** @nullable */
+  publishingTarget?: string | null;
+  /** @nullable */
+  theme?: string | null;
+  /** @nullable */
+  fontFamily?: string | null;
+  /** @nullable */
+  fontSize?: number | null;
+  /** @nullable */
+  lineSpacing?: string | null;
+  /** @nullable */
+  marginSize?: string | null;
+  /** @nullable */
+  pageNumberPosition?: string | null;
+  /** @nullable */
+  chapterNumberStyle?: string | null;
+  /** @nullable */
+  citationStyle?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserTemplateCreate {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  bookType?: string;
+  publishingTarget?: string;
+  theme?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  lineSpacing?: string;
+  marginSize?: string;
+  pageNumberPosition?: string;
+  chapterNumberStyle?: string;
+  citationStyle?: string;
+}
+
+export interface UserTemplateUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name?: string;
+  bookType?: string;
+  publishingTarget?: string;
+  theme?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  lineSpacing?: string;
+  marginSize?: string;
+  pageNumberPosition?: string;
+  chapterNumberStyle?: string;
+  citationStyle?: string;
+}
+
 export interface ErrorEnvelope {
   error: string;
 }

@@ -1,6 +1,6 @@
 import { FC, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Book, LayoutDashboard, Settings, Upload, LogOut } from "lucide-react";
+import { Book, LayoutDashboard, Settings, Upload, LogOut, Wrench } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 interface AppLayoutProps {
@@ -16,6 +16,7 @@ export const AppLayout: FC<AppLayoutProps> = ({ children, title, actions }) => {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "New Manuscript", href: "/upload", icon: Upload },
+    { name: "Tools", href: "/tools", icon: Wrench },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 

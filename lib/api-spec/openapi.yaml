@@ -24,6 +24,8 @@ tags:
     description: Object storage upload and serving endpoints
   - name: account
     description: Account and data management
+  - name: user-templates
+    description: Saved user formatting templates
 
 paths:
   /healthz:
@@ -384,6 +386,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /user-templates:
+    get:
+      operationId: listUserTemplates
+      tags: [user-templates]
+      summary: List saved formatting templates for the current user
+      responses:
+        "200":
+          description: List of user templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserTemplate"
+    post:
+      operationId: createUserTemplate
+      tags: [user-templates]
+      summary: Save a new formatting template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserTemplateCreate"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTemplate"
+
+  /user-templates/{id}:
+    patch:
+      operationId: updateUserTemplate
+      tags: [user-templates]
+      summary: Update a saved template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTemplate"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteUserTemplate
+      tags: [user-templates]
+      summary: Delete a saved template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
 
   /subscription/cancel:
     post:
@@ -790,6 +866,98 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/StorageUploadRequest"
+
+    UserTemplate:
+      type: object
+      required: [id, userId, name, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        name:
+          type: string
+        bookType:
+          type: ["string", "null"]
+        publishingTarget:
+          type: ["string", "null"]
+        theme:
+          type: ["string", "null"]
+        fontFamily:
+          type: ["string", "null"]
+        fontSize:
+          type: ["integer", "null"]
+        lineSpacing:
+          type: ["string", "null"]
+        marginSize:
+          type: ["string", "null"]
+        pageNumberPosition:
+          type: ["string", "null"]
+        chapterNumberStyle:
+          type: ["string", "null"]
+        citationStyle:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    UserTemplateCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        bookType:
+          type: string
+        publishingTarget:
+          type: string
+        theme:
+          type: string
+        fontFamily:
+          type: string
+        fontSize:
+          type: integer
+        lineSpacing:
+          type: string
+        marginSize:
+          type: string
+        pageNumberPosition:
+          type: string
+        chapterNumberStyle:
+          type: string
+        citationStyle:
+          type: string
+
+    UserTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        bookType:
+          type: string
+        publishingTarget:
+          type: string
+        theme:
+          type: string
+        fontFamily:
+          type: string
+        fontSize:
+          type: integer
+        lineSpacing:
+          type: string
+        marginSize:
+          type: string
+        pageNumberPosition:
+          type: string
+        chapterNumberStyle:
+          type: string
+        citationStyle:
+          type: string
 
     ErrorEnvelope:
       type: object
