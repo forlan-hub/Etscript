@@ -7,7 +7,7 @@ import { useRoute, useLocation, Link } from "wouter";
 import { useGetJob, useUpdateJob } from "@workspace/api-client-react";
 import {
   BookOpen, GraduationCap, Briefcase, Layout, Palette,
-  ArrowRight, ArrowLeft, Mail, Lock
+  ArrowRight, ArrowLeft, Mail, Lock, Eye, Columns2, X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowStepper } from "@/components/workflow-stepper";
@@ -15,8 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   SUITES, TEMPLATES, getTemplatesBySuite, getDocumentSuite, CITATION_STYLES,
-  type DocumentSuite,
+  type DocumentSuite, type DocumentTemplate,
 } from "@/lib/templates";
+import { TemplateThumbnail } from "@/components/template-thumbnail";
+import { TemplatePreviewModal } from "@/components/template-preview-modal";
+import { TemplateCompareModal } from "@/components/template-compare-modal";
 
 const MANUSCRIPT_SUITES = SUITES.filter((s) => s.id !== "letters");
 
@@ -107,6 +110,10 @@ export default function FormatPage() {
   const [target, setTarget] = useState<string>("");
   const [theme, setTheme] = useState<string>("");
 
+  const [previewTemplate, setPreviewTemplate] = useState<DocumentTemplate | null>(null);
+  const [compareSet, setCompareSet] = useState<Set<string>>(new Set());
+  const [compareOpen, setCompareOpen] = useState(false);
+
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -126,6 +133,7 @@ export default function FormatPage() {
     setSelectedSuite(suite);
     setBookType("");
     setCitationStyle("");
+    setCompareSet(new Set());
     const suiteTemplates = getTemplatesBySuite(suite);
     if (suiteTemplates.length > 0 && !target) {
       setTarget(suiteTemplates[0].defaultTarget);
@@ -137,6 +145,18 @@ export default function FormatPage() {
     setBookType(templateId);
     if (tpl && !theme) setTheme(tpl.defaultTheme);
     if (tpl && !target) setTarget(tpl.defaultTarget);
+  };
+
+  const toggleCompare = (id: string) => {
+    setCompareSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 3) {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const handleContinue = async () => {
@@ -156,6 +176,11 @@ export default function FormatPage() {
 
   const canContinue = !!bookType && !!target && !!theme;
 
+  const currentSuiteTemplates = selectedSuite
+    ? getTemplatesBySuite(selectedSuite as DocumentSuite)
+    : [];
+  const compareTemplates = currentSuiteTemplates.filter((t) => compareSet.has(t.id));
+
   if (isLoading) {
     return (
       <AppLayout title="Format Setup">
@@ -169,10 +194,10 @@ export default function FormatPage() {
 
   return (
     <AppLayout title="Format Setup">
-      <div className="max-w-5xl mx-auto space-y-12">
+      <div className="max-w-5xl mx-auto space-y-12 pb-24">
         <WorkflowStepper currentStep={2} jobId={jobId} />
 
-        {/* Step 1: Suite Selection */}
+        {/* Suite Selection */}
         <div className="space-y-5">
           <div>
             <h2 className="text-xl font-serif font-medium">Document Suite</h2>
@@ -194,7 +219,7 @@ export default function FormatPage() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`text-primary mt-0.5`}>{SUITE_ICONS[suite.id]}</div>
+                      <div className="text-primary mt-0.5">{SUITE_ICONS[suite.id]}</div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-foreground">{suite.label}</h3>
@@ -215,7 +240,7 @@ export default function FormatPage() {
             ))}
           </div>
 
-          {/* Professional Letters Callout */}
+          {/* Letters callout */}
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border bg-secondary/30 px-5 py-4">
             <div className="flex items-center gap-3">
               <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -234,49 +259,110 @@ export default function FormatPage() {
           </div>
         </div>
 
-        {/* Step 2: Template Selection (conditional on suite) */}
+        {/* Template Selection */}
         {selectedSuite && (
           <div className="space-y-5">
-            <div>
-              <h2 className="text-xl font-serif font-medium">Template</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select the specific document type within{" "}
-                {SUITES.find((s) => s.id === selectedSuite)?.label}.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {getTemplatesBySuite(selectedSuite).map((tpl) => (
-                <Card
-                  key={tpl.id}
-                  className={`cursor-pointer transition-all hover:border-primary/50 ${
-                    bookType === tpl.id
-                      ? "border-primary ring-1 ring-primary shadow-sm bg-primary/5"
-                      : ""
-                  }`}
-                  onClick={() => handleTemplateSelect(tpl.id)}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-serif font-medium">Template</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select the specific document type. Use{" "}
+                  <span className="inline-flex items-center gap-0.5 font-medium">
+                    <Eye className="w-3.5 h-3.5" /> Preview
+                  </span>{" "}
+                  to explore a template, or{" "}
+                  <span className="inline-flex items-center gap-0.5 font-medium">
+                    <Columns2 className="w-3.5 h-3.5" /> Compare
+                  </span>{" "}
+                  to compare up to 3 side-by-side.
+                </p>
+              </div>
+              {compareSet.size >= 1 && (
+                <button
+                  onClick={() => setCompareSet(new Set())}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0 mt-1"
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-medium text-sm text-foreground">{tpl.label}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                          {tpl.desc}
-                        </p>
-                      </div>
-                      {tpl.isPremium && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
-                          Premium
-                        </Badge>
-                      )}
+                  <X className="w-3 h-3" /> Clear compare
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentSuiteTemplates.map((tpl) => {
+                const isSelected = bookType === tpl.id;
+                const isInCompare = compareSet.has(tpl.id);
+                const compareDisabled = compareSet.size >= 3 && !isInCompare;
+
+                return (
+                  <Card
+                    key={tpl.id}
+                    className={`cursor-pointer transition-all overflow-hidden hover:border-primary/50 ${
+                      isSelected
+                        ? "border-primary ring-1 ring-primary shadow-sm bg-primary/5"
+                        : ""
+                    }`}
+                    onClick={() => handleTemplateSelect(tpl.id)}
+                  >
+                    {/* Thumbnail strip */}
+                    <div className="flex items-center justify-center bg-secondary/20 py-4 border-b border-border">
+                      <TemplateThumbnail template={tpl} size="sm" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-medium text-sm text-foreground leading-tight">{tpl.label}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                            {tpl.desc}
+                          </p>
+                        </div>
+                        {tpl.isPremium && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
+                            Premium
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Action row */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-border">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewTemplate(tpl);
+                          }}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded hover:bg-primary/5"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Preview
+                        </button>
+                        <div className="w-px h-4 bg-border" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCompare(tpl.id);
+                          }}
+                          disabled={compareDisabled}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                            isInCompare
+                              ? "bg-primary text-primary-foreground"
+                              : compareDisabled
+                              ? "text-muted-foreground/40 cursor-not-allowed"
+                              : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                          }`}
+                        >
+                          <Columns2 className="w-3.5 h-3.5" />
+                          {isInCompare ? "Added" : "Compare"}
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Step 2b: Citation Style (Academic only) */}
+        {/* Citation Style (Academic only) */}
         {selectedSuite === "academic" && bookType && (
           <div className="space-y-5">
             <div>
@@ -300,13 +386,13 @@ export default function FormatPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-2">
-                This is stored with your document and will be used when the Citation Engine generates your reference list.
+                Stored with your document and used when the Citation Engine generates your reference list.
               </p>
             </div>
           </div>
         )}
 
-        {/* Step 3: Publishing Target */}
+        {/* Publishing Target */}
         {selectedSuite && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
@@ -334,7 +420,7 @@ export default function FormatPage() {
           </div>
         )}
 
-        {/* Step 4: Design Theme */}
+        {/* Design Theme */}
         {selectedSuite && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
@@ -379,6 +465,51 @@ export default function FormatPage() {
           </Button>
         </div>
       </div>
+
+      {/* Sticky compare bar */}
+      {compareSet.size >= 2 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-primary text-primary-foreground rounded-full shadow-xl px-6 py-3">
+          <span className="text-sm font-medium">
+            {compareSet.size} template{compareSet.size > 1 ? "s" : ""} selected
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setCompareOpen(true)}
+          >
+            Compare Side by Side
+          </Button>
+          <button
+            onClick={() => setCompareSet(new Set())}
+            className="opacity-70 hover:opacity-100 transition-opacity"
+            aria-label="Clear selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Modals */}
+      <TemplatePreviewModal
+        template={previewTemplate}
+        open={!!previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        onUse={(id) => {
+          handleTemplateSelect(id);
+          setPreviewTemplate(null);
+        }}
+      />
+      <TemplateCompareModal
+        templates={compareTemplates}
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        onUse={(id) => {
+          handleTemplateSelect(id);
+          setCompareOpen(false);
+          setCompareSet(new Set());
+        }}
+      />
     </AppLayout>
   );
 }
