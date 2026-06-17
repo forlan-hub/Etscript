@@ -3,28 +3,16 @@ import { requireAuth, getUserId } from "../middlewares/supabaseAuth";
 import { db } from "@workspace/db";
 import { userTemplatesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { z } from "zod/v4";
+import {
+  CreateUserTemplateBody,
+  UpdateUserTemplateBody,
+  UpdateUserTemplateParams,
+  DeleteUserTemplateParams,
+} from "@workspace/api-zod";
 
 const router = Router();
 
-const MAX_TEMPLATES_PREMIUM = 5;
-
-const CreateBody = z.object({
-  name: z.string().min(1).max(80),
-  bookType: z.string().optional(),
-  publishingTarget: z.string().optional(),
-  theme: z.string().optional(),
-  fontFamily: z.string().optional(),
-  fontSize: z.number().int().optional(),
-  lineSpacing: z.string().optional(),
-  marginSize: z.string().optional(),
-  pageNumberPosition: z.string().optional(),
-  chapterNumberStyle: z.string().optional(),
-  citationStyle: z.string().optional(),
-});
-
-const UpdateBody = CreateBody.partial();
-const IdParam = z.object({ id: z.coerce.number().int().positive() });
+const MAX_TEMPLATES = 5;
 
 router.get("/user-templates", requireAuth, async (req, res): Promise<void> => {
   const userId = getUserId(req);
@@ -37,7 +25,7 @@ router.get("/user-templates", requireAuth, async (req, res): Promise<void> => {
 
 router.post("/user-templates", requireAuth, async (req, res): Promise<void> => {
   const userId = getUserId(req);
-  const parsed = CreateBody.safeParse(req.body);
+  const parsed = CreateUserTemplateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -48,8 +36,8 @@ router.post("/user-templates", requireAuth, async (req, res): Promise<void> => {
     .from(userTemplatesTable)
     .where(eq(userTemplatesTable.userId, userId));
 
-  if (existing.length >= MAX_TEMPLATES_PREMIUM) {
-    res.status(400).json({ error: `Maximum of ${MAX_TEMPLATES_PREMIUM} saved templates reached.` });
+  if (existing.length >= MAX_TEMPLATES) {
+    res.status(400).json({ error: `Maximum of ${MAX_TEMPLATES} saved templates reached.` });
     return;
   }
 
@@ -63,12 +51,12 @@ router.post("/user-templates", requireAuth, async (req, res): Promise<void> => {
 
 router.patch("/user-templates/:id", requireAuth, async (req, res): Promise<void> => {
   const userId = getUserId(req);
-  const idParsed = IdParam.safeParse({ id: req.params.id });
+  const idParsed = UpdateUserTemplateParams.safeParse({ id: Number(req.params.id) });
   if (!idParsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const bodyParsed = UpdateBody.safeParse(req.body);
+  const bodyParsed = UpdateUserTemplateBody.safeParse(req.body);
   if (!bodyParsed.success) {
     res.status(400).json({ error: bodyParsed.error.message });
     return;
@@ -89,7 +77,7 @@ router.patch("/user-templates/:id", requireAuth, async (req, res): Promise<void>
 
 router.delete("/user-templates/:id", requireAuth, async (req, res): Promise<void> => {
   const userId = getUserId(req);
-  const idParsed = IdParam.safeParse({ id: req.params.id });
+  const idParsed = DeleteUserTemplateParams.safeParse({ id: Number(req.params.id) });
   if (!idParsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;

@@ -24,9 +24,9 @@ import {
   useCreateUserTemplate,
   useUpdateUserTemplate,
   useDeleteUserTemplate,
+  useGetSubscription,
 } from "@workspace/api-client-react";
 import type { UserTemplate } from "@workspace/api-client-react";
-import { useSubscriptionStatus } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { TEMPLATES, SUITES, type DocumentSuite } from "@/lib/templates";
 
@@ -303,7 +303,7 @@ export default function MyTemplatesPage() {
   const { toast } = useToast();
 
   const { data: templates, isLoading } = useListUserTemplates();
-  const { data: sub } = useSubscriptionStatus();
+  const { data: sub } = useGetSubscription();
   const createMutation = useCreateUserTemplate();
   const updateMutation = useUpdateUserTemplate();
   const deleteMutation = useDeleteUserTemplate();
