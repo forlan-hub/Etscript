@@ -1,0 +1,210 @@
+ETSCRIPT TERMS OF USE
+Effective Date: [Insert Date]
+Last Updated: [Insert Date]
+________________________________________
+1. ACCEPTANCE OF TERMS
+These Terms of Use ("Terms") govern access to and use of the Etscript platform available through etscript.site.
+Etscript is owned and operated by FurstoneTech Solutions Limited ("FurstoneTech", "Etscript", "we", "our", or "us").
+By creating an account, accessing, or using Etscript, you agree to be bound by these Terms.
+If you do not agree to these Terms, you must not use the platform.
+________________________________________
+2. ELIGIBILITY
+To use Etscript, you must:
+•	Be at least 18 years old, or
+•	Be legally authorized to enter into binding agreements under applicable law.
+During registration, users shall confirm eligibility by selecting the required age confirmation checkbox.
+________________________________________
+3. DESCRIPTION OF SERVICES
+Etscript is a manuscript formatting platform that enables users to:
+•	Upload manuscripts
+•	Edit manuscripts
+•	Apply formatting templates
+•	Preview formatted outputs
+•	Generate publication-ready exports
+•	Manage manuscript projects
+Etscript is not:
+•	A publishing company but Etscript shall provide an ISBN Preparation Tool that assists users in formatting and generating metadata required for official ISBN application
+through relevant national ISBN agencies.
+•	A literary agency
+•	A legal review service
+•	A plagiarism detection service
+•	A grammar correction service
+•	A copyright registration service
+Users remain responsible for the content they upload and publish.
+________________________________________
+4. USER ACCOUNTS
+Users are responsible for:
+•	Maintaining the confidentiality of login credentials
+•	Restricting access to their accounts
+•	All activities conducted through their accounts
+Users shall immediately notify Etscript of any suspected unauthorized access.
+Etscript reserves the right to suspend or terminate accounts where security concerns arise.
+________________________________________
+5. USER CONTENT
+Users may upload manuscripts, books, reports, training materials, and other documents ("User Content").
+Users represent and warrant that they:
+•	Own the content; or
+•	Have the legal right to upload and process the content.
+Users shall not upload content that infringes:
+•	Copyrights
+•	Trademarks
+•	Patents
+•	Trade secrets
+•	Privacy rights
+•	Other intellectual property rights
+________________________________________
+6. OWNERSHIP OF CONTENT
+Users retain full ownership of all User Content uploaded to Etscript.
+Nothing in these Terms transfers ownership of User Content to Etscript.
+By uploading content, users grant Etscript a limited, non-exclusive, revocable right to:
+•	Store content
+•	Process content
+•	Format content
+•	Generate exports
+solely for the purpose of providing requested services.
+________________________________________
+7. PROHIBITED USES
+Users shall not:
+•	Upload unlawful content
+•	Upload malicious software
+•	Upload content designed to disrupt the platform
+•	Attempt unauthorized access
+•	Circumvent security controls
+•	Reverse engineer the platform
+•	Use automated bots to abuse services
+•	Interfere with platform operations
+•	Use Etscript for fraudulent purposes
+Violation may result in suspension or termination of access.
+________________________________________
+8. TEMPLATE LICENSING
+Formatting templates provided by Etscript remain the intellectual property of FurstoneTech Solutions Limited.
+Users receive a limited license to use templates solely through the Etscript platform.
+Users may not:
+•	Extract template code
+•	Reproduce templates for commercial resale
+•	Redistribute template packages
+•	Create competing template libraries using Etscript proprietary assets
+Documents generated using templates belong entirely to the user.
+________________________________________
+9. FEES AND PAYMENTS
+Certain services require payment.
+Available pricing plans may include:
+Free Plan
+Subject to storage, export, and feature limitations.
+Pay-Per-Export
+One-time export purchase.
+Premium Subscription
+Recurring monthly subscription.
+Prices may be modified from time to time upon reasonable notice.
+________________________________________
+10. SUBSCRIPTION RENEWALS
+Premium subscriptions may renew automatically unless cancelled by the user.
+Users are responsible for managing subscription settings and ensuring valid payment methods remain available.
+________________________________________
+11. SUBSCRIPTION EXPIRY
+Expiration of a subscription shall not result in deletion of User Content.
+After expiry, users may:
+•	Access their accounts
+•	View stored manuscripts
+•	Renew subscriptions
+•	Purchase one-time exports
+Users may not:
+•	Use formatting engines
+•	Generate new exports
+•	Access premium formatting features
+until payment requirements are satisfied.
+________________________________________
+12. REFUNDS
+Due to the immediate digital nature of formatting and export services, payments may be non-refundable once services have been consumed.
+However, Etscript may consider refunds in cases involving:
+•	Duplicate charges
+•	Technical failures
+•	Billing errors
+Refund decisions shall be made at Etscript's discretion and subject to applicable consumer protection laws.
+________________________________________
+13. STORAGE LIMITS
+Storage allocations vary by subscription plan.
+Users are responsible for managing their allocated storage.
+Etscript may enforce manuscript limits, storage quotas, and export limits in accordance with the user's selected plan.
+________________________________________
+14. SERVICE AVAILABILITY
+While Etscript strives to maintain reliable service availability, uninterrupted access cannot be guaranteed.
+The platform may occasionally experience:
+•	Maintenance periods
+•	Technical issues
+•	Network interruptions
+•	Third-party service outages
+Etscript shall not be liable for temporary interruptions beyond its reasonable control.
+________________________________________
+15. EXPORT QUALITY DISCLAIMER
+Etscript applies automated formatting rules based on selected templates and user preferences.
+Users are responsible for reviewing exported documents before publication, printing, or distribution.
+Etscript does not guarantee:
+•	Publishing acceptance
+•	Printing acceptance
+•	Editorial approval
+•	Commercial success
+of any formatted manuscript.
+________________________________________
+16. INTELLECTUAL PROPERTY
+All platform components, including:
+•	Software
+•	Branding
+•	Logos
+•	Interface designs
+•	Template systems
+•	Documentation
+remain the property of FurstoneTech Solutions Limited or its licensors.
+No rights are transferred except as expressly stated in these Terms.
+________________________________________
+17. PRIVACY
+Personal data is processed in accordance with the Etscript Privacy Policy.
+Users should review the Privacy Policy before using the platform.
+________________________________________
+18. TERMINATION
+Etscript may suspend or terminate access where users:
+•	Violate these Terms
+•	Engage in unlawful conduct
+•	Abuse platform resources
+•	Compromise platform security
+Upon termination, access to services may be restricted in accordance with applicable law and retention obligations.
+________________________________________
+19. LIMITATION OF LIABILITY
+To the maximum extent permitted by law, Etscript and FurstoneTech Solutions Limited shall not be liable for:
+•	Indirect damages
+•	Consequential damages
+•	Loss of profits
+•	Loss of manuscripts caused by user actions
+•	Publishing losses
+•	Business interruptions
+arising from use of the platform.
+Nothing in these Terms excludes liability that cannot lawfully be excluded.
+________________________________________
+20. INDEMNITY
+Users agree to indemnify and hold harmless FurstoneTech Solutions Limited, its officers, employees, contractors, and affiliates from claims arising from:
+•	User Content
+•	Copyright infringement by users
+•	Misuse of the platform
+•	Violations of these Terms
+•	Violations of applicable law
+________________________________________
+21. CHANGES TO THE TERMS
+Etscript may update these Terms from time to time.
+Material changes may be communicated through:
+•	Website notices
+•	Email notifications
+•	In-platform alerts
+Continued use of the platform following updates constitutes acceptance of the revised Terms.
+________________________________________
+22. GOVERNING LAW
+These Terms shall be governed by and construed in accordance with the laws of the Federal Republic of Nigeria.
+Any disputes arising from these Terms shall be subject to the jurisdiction of competent courts in Nigeria, unless otherwise required by applicable law.
+________________________________________
+23. CONTACT INFORMATION
+For questions regarding these Terms, contact:
+FurstoneTech Solutions Limited
+Website: etscript.site
+Email: privacy@etscript.site
+________________________________________
+IMPORTANT NOTICE
+Etscript is a formatting platform. Users retain ownership of their manuscripts and remain solely responsible for the legality, accuracy, originality, publication, and distribution of their content.
