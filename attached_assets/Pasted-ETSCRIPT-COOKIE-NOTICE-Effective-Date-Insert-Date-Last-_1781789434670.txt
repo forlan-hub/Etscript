@@ -1,0 +1,178 @@
+ETSCRIPT COOKIE NOTICE
+Effective Date: [Insert Date]
+Last Updated: [Insert Date]
+
+1. INTRODUCTION
+This Cookie Notice explains how Etscript, a service operated by FurstoneTech Solutions Limited, uses cookies and similar technologies when you visit or use etscript.site.
+
+Cookies help us provide a secure, reliable, and user-friendly experience. This notice explains what cookies are, how we use them, and the choices available to you.
+
+2. WHAT ARE COOKIES?
+Cookies are small text files stored on your device when you visit a website.
+
+Cookies allow websites to:
+
+Remember user preferences
+
+Maintain secure login sessions
+
+Improve website functionality
+
+Enhance user experience
+
+Cookies do not typically contain information that directly identifies you, although they may be linked to information associated with your account.
+
+3. HOW ETSCRIPT USES COOKIES
+Etscript uses cookies primarily to support platform functionality, security, and user authentication.
+
+We do not use cookies for advertising or cross-site behavioral tracking.
+
+4. TYPES OF COOKIES WE USE
+A. Essential Cookies
+These cookies are necessary for Etscript to function properly.
+
+They help us:
+
+Authenticate users
+
+Maintain login sessions
+
+Protect user accounts
+
+Enable secure navigation
+
+Process requests securely
+
+Without these cookies, some parts of Etscript may not function correctly.
+
+Examples include:
+
+Authentication tokens
+
+Session identifiers
+
+Security verification cookies
+
+B. Preference Cookies
+These cookies remember user preferences and settings.
+
+Examples may include:
+
+Selected document templates
+
+Interface preferences
+
+Language preferences (if implemented)
+
+User dashboard settings
+
+These cookies improve convenience and user experience.
+
+C. Security Cookies
+Security cookies help protect users and the platform from:
+
+Unauthorized access
+
+Fraudulent activity
+
+Session hijacking
+
+Security threats
+
+These cookies support account security and platform integrity.
+
+5. COOKIES WE DO NOT USE
+As part of our privacy-by-design approach, Etscript does not currently use:
+
+Advertising cookies
+
+Behavioral tracking cookies
+
+Third-party marketing cookies
+
+Cross-site tracking technologies
+
+Social media advertising trackers
+
+Meta Pixel
+
+Session replay tools
+
+Heatmap tracking tools
+
+We do not use cookies to monitor your browsing activities on other websites.
+
+6. THIRD-PARTY SERVICES
+Some trusted service providers used by Etscript may place cookies or similar technologies necessary for their services to function.
+
+These providers may include:
+
+Authentication Providers
+Google OAuth (when users choose Google Sign-In)
+
+Payment Providers
+Paystack
+
+Infrastructure and Security Providers
+Supabase
+
+Such providers may use their own cookies in accordance with their respective privacy and cookie policies.
+
+Etscript does not control third-party cookies placed by external service providers.
+
+7. MANAGING COOKIES
+Most web browsers allow users to:
+
+View stored cookies
+
+Delete cookies
+
+Block cookies
+
+Configure cookie preferences
+
+You may manage cookies through your browser settings.
+
+Please note that disabling essential cookies may affect the functionality of Etscript and prevent certain features from operating correctly.
+
+8. CONSENT
+By continuing to use Etscript, you consent to the use of essential cookies necessary for the operation, security, and delivery of our services.
+
+Where additional categories of cookies are introduced in the future, Etscript will provide appropriate notice and, where required by applicable law, obtain user consent before deploying such cookies.
+
+9. CHANGES TO THIS COOKIE NOTICE
+We may update this Cookie Notice from time to time to reflect:
+
+Changes in technology
+
+Changes in services
+
+Legal or regulatory requirements
+
+New platform features
+
+The updated version will always be available on etscript.site.
+
+10. CONTACT US
+If you have any questions regarding this Cookie Notice or how Etscript uses cookies, please contact:
+
+Privacy Office
+FurstoneTech Solutions Limited
+Website: etscript.site
+Email: privacy@etscript.site
+
+Privacy Commitment
+Etscript uses cookies to support platform functionality, security, and user experience. We do not use cookies to build advertising profiles, sell user data, or track users across the internet. Our approach is guided by privacy-by-design principles and a commitment to protecting user trust.
+
+
+
+
+
+
+
+
+
+
+
+
+No file chosen
