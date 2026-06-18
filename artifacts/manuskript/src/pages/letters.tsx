@@ -209,7 +209,7 @@ export default function LettersPage() {
         },
       });
 
-      setLocation(`/preview/${job.id}`);
+      setLocation(`/review/${job.id}`);
     } catch {
       toast({
         title: "Something went wrong",

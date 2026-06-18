@@ -1249,6 +1249,9 @@ export async function generateFormattedFiles(
   // ── Letter suite: use structured letter data, no manuscript file needed ──
   if (suite === "letters") {
     const letter = parseLetterData(job.letterData);
+    if (letter && job.editedContent) {
+      letter.bodyParagraphs = parseHtmlToParagraphs(job.editedContent);
+    }
     const previewHtml = letter
       ? buildLetterPreviewHtml(letter, job)
       : `<p style="color:#999;font-style:italic;padding:2em">Letter data not found.</p>`;
@@ -1309,6 +1312,9 @@ export async function generateDocumentBuffer(
   if (suite === "letters") {
     const letter = parseLetterData(job.letterData);
     if (!letter) throw new Error("Letter data missing or malformed");
+    if (job.editedContent) {
+      letter.bodyParagraphs = parseHtmlToParagraphs(job.editedContent);
+    }
     return format === "pdf"
       ? generateLetterPdfBuffer(job, letter, opts.watermark)
       : generateLetterDocxBuffer(job, letter, opts.watermark);
@@ -1336,9 +1342,52 @@ export async function generateDocumentBuffer(
 }
 
 /** Generate clean editor HTML from the manuscript source for the first-time editor load. */
+function parseHtmlToParagraphs(html: string): string[] {
+  const decode = (s: string) =>
+    s
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const pRe = /<p(?:\s[^>]*)?>([^]*?)<\/p>/gi;
+  const paragraphs: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = pRe.exec(html)) !== null) {
+    const text = decode(m[1]);
+    if (text) paragraphs.push(text);
+  }
+  return paragraphs;
+}
+
 export async function generateEditorContent(
   manuscript: ManuscriptInfo,
+  job?: { bookType: string | null; letterData: string | null },
 ): Promise<{ html: string; wordCount: number }> {
+  // ── Letters: generate editable HTML from the stored letter body ──────────
+  if (job && getDocumentSuite(job.bookType) === "letters") {
+    const letter = parseLetterData(job.letterData);
+    if (letter && letter.bodyParagraphs.length > 0) {
+      const esc = (s: string) =>
+        s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const html = letter.bodyParagraphs
+        .filter((p) => p.trim())
+        .map((p) => `<p>${esc(p.trim())}</p>`)
+        .join("\n");
+      const wordCount = letter.bodyParagraphs
+        .join(" ")
+        .split(/\s+/)
+        .filter(Boolean).length;
+      return { html, wordCount };
+    }
+    return { html: "<p></p>", wordCount: 0 };
+  }
+
   let rawText = "";
   if (manuscript.fileKey && manuscript.originalFilename) {
     try {

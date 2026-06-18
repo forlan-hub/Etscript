@@ -309,7 +309,7 @@ router.get("/jobs/:id/content", requireAuth, async (req, res): Promise<void> => 
   }
 
   try {
-    const result = await generateEditorContent(manuscript);
+    const result = await generateEditorContent(manuscript, job);
     res.json(result);
   } catch (err) {
     if (err instanceof MissingUploadError) {
