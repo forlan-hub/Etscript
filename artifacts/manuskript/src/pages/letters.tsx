@@ -9,33 +9,103 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLocation } from "wouter";
 import { useCreateManuscript, useCreateJob, useUpdateJob } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowLeft, Loader2, Mail, User, Building2, CalendarDays, FileText } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  FileText,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { LETTER_CATEGORIES, TEMPLATES, type LetterData } from "@/lib/templates";
 import { format as formatDate } from "date-fns";
 
 const ALL_LETTER_TEMPLATES = TEMPLATES.filter((t) => t.suite === "letters");
 
+const TYPE_REF_CODES: Record<string, string> = {
+  letter_resignation: "RES",
+  letter_cover: "COV",
+  letter_appointment: "APT",
+  letter_promotion: "PRO",
+  letter_confirmation: "CNF",
+  letter_query: "QRY",
+  letter_warning: "WRN",
+  letter_termination: "TRM",
+  letter_recommendation: "REC",
+  letter_reference: "REF",
+  letter_acceptance: "ACC",
+  letter_formal_business: "BUS",
+  letter_request: "REQ",
+  letter_complaint: "CMP",
+  letter_partnership_proposal: "PPL",
+  letter_introduction: "INT",
+};
+
+const TYPE_SUBJECTS: Record<string, string> = {
+  letter_resignation: "RE: LETTER OF RESIGNATION",
+  letter_cover: "RE: JOB APPLICATION",
+  letter_appointment: "RE: LETTER OF APPOINTMENT",
+  letter_promotion: "RE: LETTER OF PROMOTION",
+  letter_confirmation: "RE: LETTER OF CONFIRMATION",
+  letter_query: "RE: QUERY",
+  letter_warning: "RE: LETTER OF WARNING",
+  letter_termination: "RE: LETTER OF TERMINATION",
+  letter_recommendation: "RE: LETTER OF RECOMMENDATION",
+  letter_reference: "RE: REFERENCE LETTER",
+  letter_acceptance: "RE: LETTER OF ACCEPTANCE",
+  letter_formal_business: "RE: FORMAL BUSINESS CORRESPONDENCE",
+  letter_request: "RE: REQUEST",
+  letter_complaint: "RE: COMPLAINT",
+  letter_partnership_proposal: "RE: PARTNERSHIP PROPOSAL",
+  letter_introduction: "RE: INTRODUCTION",
+};
+
 function getTodayString(): string {
   return formatDate(new Date(), "MMMM d, yyyy");
 }
 
-function getSuggestedClosing(letterType: string): string {
-  const hrTypes = ["letter_appointment", "letter_promotion", "letter_confirmation", "letter_query", "letter_warning", "letter_termination"];
-  if (hrTypes.includes(letterType)) return "Yours faithfully,";
+function generateRefNumber(letterType: string): string {
+  const code = TYPE_REF_CODES[letterType] ?? "LTR";
+  const now = new Date();
+  const year = now.getFullYear();
+  const seq =
+    String(now.getMonth() + 1).padStart(2, "0") +
+    String(now.getDate()).padStart(2, "0");
+  return `ETL/${code}/${year}/${seq}`;
+}
+
+function getSalutation(recipientName: string): string {
+  if (!recipientName.trim()) return "Dear Sir/Madam,";
+  const parts = recipientName.trim().split(/\s+/);
+  const surname = parts[parts.length - 1] ?? recipientName;
+  return `Dear ${surname},`;
+}
+
+function getClosing(letterType: string): string {
+  const formal = [
+    "letter_appointment", "letter_promotion", "letter_confirmation",
+    "letter_query", "letter_warning", "letter_termination", "letter_formal_business",
+  ];
+  if (formal.includes(letterType)) return "Yours faithfully,";
   if (letterType === "letter_cover") return "Yours sincerely,";
   return "Yours faithfully,";
 }
 
-function getSuggestedSubject(letterType: string): string {
-  const tpl = ALL_LETTER_TEMPLATES.find((t) => t.id === letterType);
-  return tpl ? `RE: ${tpl.label}` : "";
+function parseRawLetter(raw: string): string[] {
+  return raw
+    .split(/\n{2,}/)
+    .map((p) => p.replace(/\n/g, " ").trim())
+    .filter((p) => p.length > 0);
 }
 
-function getSuggestedSalutation(recipientName: string): string {
-  if (!recipientName.trim()) return "Dear Sir/Madam,";
-  const name = recipientName.trim().split(" ").pop() ?? recipientName;
-  return `Dear ${name},`;
-}
+const WHAT_WE_ADD = [
+  "Reference number (corporate format)",
+  "Date positioned top-right",
+  "Proper paragraph spacing",
+  "Signature block with name & title",
+  "Corporate-standard layout",
+];
 
 export default function LettersPage() {
   const [, setLocation] = useLocation();
@@ -46,67 +116,66 @@ export default function LettersPage() {
   const updateJob = useUpdateJob();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOptional, setShowOptional] = useState(false);
 
+  // Core inputs
   const [letterType, setLetterType] = useState("");
-  const [date, setDate] = useState(getTodayString());
-  const [senderName, setSenderName] = useState("");
-  const [senderTitle, setSenderTitle] = useState("");
+  const [rawText, setRawText] = useState("");
+
+  // About you (signatory)
+  const [signatoryName, setSignatoryName] = useState("");
+  const [signatoryTitle, setSignatoryTitle] = useState("");
   const [senderOrg, setSenderOrg] = useState("");
-  const [senderAddress, setSenderAddress] = useState("");
+
+  // Recipient
   const [recipientName, setRecipientName] = useState("");
   const [recipientTitle, setRecipientTitle] = useState("");
   const [recipientOrg, setRecipientOrg] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
-  const [subject, setSubject] = useState("");
-  const [salutation, setSalutation] = useState("Dear Sir/Madam,");
-  const [bodyText, setBodyText] = useState("");
+
+  // Formatting details (auto-generated, user-editable)
+  const [reference, setReference] = useState("");
+  const [date, setDate] = useState(getTodayString());
   const [closing, setClosing] = useState("Yours faithfully,");
-  const [signatoryName, setSignatoryName] = useState("");
-  const [signatoryTitle, setSignatoryTitle] = useState("");
   const [theme, setTheme] = useState("classic");
 
   const handleLetterTypeChange = (value: string) => {
     setLetterType(value);
-    if (!subject) setSubject(getSuggestedSubject(value));
-    setClosing(getSuggestedClosing(value));
-  };
-
-  const handleRecipientNameChange = (value: string) => {
-    setRecipientName(value);
-    setSalutation(getSuggestedSalutation(value));
+    setReference(generateRefNumber(value));
+    setClosing(getClosing(value));
   };
 
   const validateForm = (): string | null => {
-    if (!letterType) return "Please select a letter type.";
-    if (!senderOrg.trim()) return "Sender organisation is required.";
+    if (!letterType) return "Please select the letter type.";
+    if (!rawText.trim()) return "Please paste or write your letter content.";
+    if (!signatoryName.trim()) return "Your full name is required.";
     if (!recipientName.trim()) return "Recipient name is required.";
-    if (!subject.trim()) return "Subject line is required.";
-    if (!bodyText.trim()) return "Letter body cannot be empty.";
-    if (!signatoryName.trim()) return "Signatory name is required.";
     return null;
   };
 
-  const handleGenerate = async () => {
+  const handleFormat = async () => {
     const error = validateForm();
     if (error) {
-      toast({ title: "Incomplete form", description: error, variant: "destructive" });
+      toast({ title: "Incomplete", description: error, variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const bodyParagraphs = bodyText
-        .split(/\n{2,}/)
-        .map((p) => p.replace(/\n/g, " ").trim())
-        .filter(Boolean);
+      const bodyParagraphs = parseRawLetter(rawText);
+      const tpl = ALL_LETTER_TEMPLATES.find((t) => t.id === letterType);
+      const subject = TYPE_SUBJECTS[letterType] ?? `RE: ${tpl?.label ?? "LETTER"}`;
+      const salutation = getSalutation(recipientName);
+      const manuscriptTitle =
+        subject.replace(/^re:\s*/i, "").trim() || tpl?.label || "Professional Letter";
 
       const letterData: LetterData = {
         letterType,
         date,
-        senderName,
-        senderTitle,
+        senderName: signatoryName,
+        senderTitle: signatoryTitle,
         senderOrg,
-        senderAddress,
+        senderAddress: "",
         recipientName,
         recipientTitle,
         recipientOrg,
@@ -117,16 +186,16 @@ export default function LettersPage() {
         closing,
         signatoryName,
         signatoryTitle,
+        reference: reference.trim() || undefined,
       };
-
-      const tpl = ALL_LETTER_TEMPLATES.find((t) => t.id === letterType);
-      const manuscriptTitle = subject.replace(/^re:\s*/i, "").trim() || tpl?.label || "Professional Letter";
 
       const manuscript = await createManuscript.mutateAsync({
         data: { title: manuscriptTitle, originalFilename: undefined },
       });
 
-      const job = await createJob.mutateAsync({ data: { manuscriptId: manuscript.id } });
+      const job = await createJob.mutateAsync({
+        data: { manuscriptId: manuscript.id },
+      });
 
       await updateJob.mutateAsync({
         id: job.id,
@@ -141,38 +210,47 @@ export default function LettersPage() {
       });
 
       setLocation(`/preview/${job.id}`);
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Failed to create letter", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } catch {
+      toast({
+        title: "Something went wrong",
+        description: "Could not format the letter. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const letterLabel = ALL_LETTER_TEMPLATES.find((t) => t.id === letterType)?.label;
-
   return (
-    <AppLayout title="Letter Builder">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <AppLayout title="Letter Formatter">
+      <div className="max-w-2xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <Mail className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-serif font-semibold">Professional Letter Builder</h1>
-            <p className="text-sm text-muted-foreground">
-              Fill in the details and Etscript will format a professional letter ready to download.
-            </p>
+        <div>
+          <h1 className="text-2xl font-serif font-semibold">Professional Letter Formatter</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Write your letter naturally. Etscript applies corporate-standard structure and formatting.
+          </p>
+        </div>
+
+        {/* What we add */}
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">What Etscript adds for you</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+            {WHAT_WE_ADD.map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-foreground">
+                <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                {item}
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Letter Type */}
         <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg">Letter Type</CardTitle>
-            <CardDescription>Select the type of letter you need to generate.</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base">Letter Type</CardTitle>
+            <CardDescription>Determines the reference code, subject line, and closing.</CardDescription>
           </CardHeader>
           <CardContent>
             <Select value={letterType} onValueChange={handleLetterTypeChange}>
@@ -197,173 +275,222 @@ export default function LettersPage() {
                 ))}
               </SelectContent>
             </Select>
-            {letterLabel && (
-              <p className="text-xs text-muted-foreground mt-2">
-                {ALL_LETTER_TEMPLATES.find((t) => t.id === letterType)?.desc}
+          </CardContent>
+        </Card>
+
+        {/* Raw Letter */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              Your Letter
+            </CardTitle>
+            <CardDescription>
+              Paste or type your letter. Don't worry about layout — write naturally.
+              Separate paragraphs with a blank line.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              placeholder={
+                "I am writing to formally tender my resignation from my position as Senior Software Engineer, effective 30 days from today's date.\n\nI want to thank you and the team for the opportunity to contribute to the company's growth over the past three years.\n\nPlease let me know how I can assist with the handover process during my notice period."
+              }
+              className="min-h-[240px] font-sans text-sm leading-relaxed resize-y"
+            />
+            {rawText.trim() && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {parseRawLetter(rawText).length} paragraph{parseRawLetter(rawText).length !== 1 ? "s" : ""} detected
               </p>
             )}
           </CardContent>
         </Card>
 
-        {/* Sender Details */}
+        {/* About You */}
         <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-primary" /> Sender Details
-            </CardTitle>
-            <CardDescription>The organisation or individual sending this letter.</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base">About You</CardTitle>
+            <CardDescription>Used for the sender block and signature.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-2">
-              <Label htmlFor="senderOrg">Organisation / Company Name <span className="text-destructive">*</span></Label>
-              <Input id="senderOrg" value={senderOrg} onChange={(e) => setSenderOrg(e.target.value)} placeholder="e.g. FurstoneTech Solutions Limited" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="senderName">Contact Name (optional)</Label>
-              <Input id="senderName" value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="e.g. Jane Smith" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="senderTitle">Title / Department (optional)</Label>
-              <Input id="senderTitle" value={senderTitle} onChange={(e) => setSenderTitle(e.target.value)} placeholder="e.g. HR Director" />
-            </div>
-            <div className="sm:col-span-2 space-y-2">
-              <Label htmlFor="senderAddress">Address (optional)</Label>
-              <Input id="senderAddress" value={senderAddress} onChange={(e) => setSenderAddress(e.target.value)} placeholder="e.g. 14 Victoria Island, Lagos, Nigeria" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Date and Recipient */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" /> Recipient & Date
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-2">
-              <Label htmlFor="date">
-                <CalendarDays className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />Date
+            <div className="sm:col-span-2 space-y-1.5">
+              <Label htmlFor="signatoryName">
+                Full Name <span className="text-destructive">*</span>
               </Label>
-              <Input id="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="e.g. June 14, 2026" />
+              <Input
+                id="signatoryName"
+                value={signatoryName}
+                onChange={(e) => setSignatoryName(e.target.value)}
+                placeholder="e.g. Amaka Okafor"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipientName">Recipient Name <span className="text-destructive">*</span></Label>
-              <Input id="recipientName" value={recipientName} onChange={(e) => handleRecipientNameChange(e.target.value)} placeholder="e.g. Mr. John Doe" />
+            <div className="space-y-1.5">
+              <Label htmlFor="signatoryTitle">Job Title / Position</Label>
+              <Input
+                id="signatoryTitle"
+                value={signatoryTitle}
+                onChange={(e) => setSignatoryTitle(e.target.value)}
+                placeholder="e.g. Senior Software Engineer"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipientTitle">Recipient Title / Role</Label>
-              <Input id="recipientTitle" value={recipientTitle} onChange={(e) => setRecipientTitle(e.target.value)} placeholder="e.g. Software Engineer" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipientOrg">Recipient Organisation</Label>
-              <Input id="recipientOrg" value={recipientOrg} onChange={(e) => setRecipientOrg(e.target.value)} placeholder="e.g. Acme Corp" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipientAddress">Recipient Address</Label>
-              <Input id="recipientAddress" value={recipientAddress} onChange={(e) => setRecipientAddress(e.target.value)} placeholder="e.g. Abuja, Nigeria" />
+            <div className="space-y-1.5">
+              <Label htmlFor="senderOrg">Organisation / Department</Label>
+              <Input
+                id="senderOrg"
+                value={senderOrg}
+                onChange={(e) => setSenderOrg(e.target.value)}
+                placeholder="e.g. FurstoneTech Solutions"
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* Letter Content */}
+        {/* Recipient */}
         <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" /> Letter Content
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base">Recipient</CardTitle>
+            <CardDescription>Who is receiving this letter?</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject Line <span className="text-destructive">*</span></Label>
-              <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. RE: Letter of Appointment" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="salutation">Salutation</Label>
-              <Input id="salutation" value={salutation} onChange={(e) => setSalutation(e.target.value)} placeholder="e.g. Dear Sir/Madam," />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="body">Body <span className="text-destructive">*</span></Label>
-              <Textarea
-                id="body"
-                value={bodyText}
-                onChange={(e) => setBodyText(e.target.value)}
-                placeholder={"Write each paragraph separated by a blank line.\n\nFor example, this is the first paragraph.\n\nThis is the second paragraph."}
-                className="min-h-[180px] font-sans text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Separate paragraphs with a blank line (press Enter twice).
-              </p>
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="recipientName">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="recipientName"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="e.g. Mr. John Adeyemi"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="recipientTitle">Title / Role</Label>
+                <Input
+                  id="recipientTitle"
+                  value={recipientTitle}
+                  onChange={(e) => setRecipientTitle(e.target.value)}
+                  placeholder="e.g. Head of HR"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowOptional((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showOptional ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showOptional ? "Hide" : "Add"} organisation & address (optional)
+            </button>
+
+            {showOptional && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="recipientOrg">Organisation</Label>
+                  <Input
+                    id="recipientOrg"
+                    value={recipientOrg}
+                    onChange={(e) => setRecipientOrg(e.target.value)}
+                    placeholder="e.g. Acme Corp"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="recipientAddress">Address</Label>
+                  <Input
+                    id="recipientAddress"
+                    value={recipientAddress}
+                    onChange={(e) => setRecipientAddress(e.target.value)}
+                    placeholder="e.g. Victoria Island, Lagos"
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Formatting Details */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base">Formatting Details</CardTitle>
+            <CardDescription>Auto-generated based on your letter type. Adjust if needed.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="reference">Reference Number</Label>
+                <Input
+                  id="reference"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="e.g. ETL/RES/2026/0617"
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  placeholder="e.g. June 17, 2026"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="closing">Closing</Label>
-                <Input id="closing" value={closing} onChange={(e) => setClosing(e.target.value)} placeholder="e.g. Yours faithfully," />
+                <Input
+                  id="closing"
+                  value={closing}
+                  onChange={(e) => setClosing(e.target.value)}
+                  placeholder="e.g. Yours faithfully,"
+                />
+              </div>
+            </div>
+
+            {/* Theme */}
+            <div className="space-y-2">
+              <Label>Style</Label>
+              <div className="grid grid-cols-3 gap-3">
+                {(["classic", "modern", "premium"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTheme(t)}
+                    className={`rounded-lg border-2 p-3 text-left transition-all ${
+                      theme === t
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="font-medium text-sm capitalize">{t}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {t === "classic"
+                        ? "Serif, traditional"
+                        : t === "modern"
+                          ? "Sans-serif, clean"
+                          : "Elegant, premium"}
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Signatory */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg">Signatory</CardTitle>
-            <CardDescription>The person signing the letter.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="signatoryName">Full Name <span className="text-destructive">*</span></Label>
-              <Input id="signatoryName" value={signatoryName} onChange={(e) => setSignatoryName(e.target.value)} placeholder="e.g. Jane Smith" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="signatoryTitle">Title / Position</Label>
-              <Input id="signatoryTitle" value={signatoryTitle} onChange={(e) => setSignatoryTitle(e.target.value)} placeholder="e.g. HR Director" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Appearance */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="font-serif text-lg">Appearance</CardTitle>
-            <CardDescription>Choose a visual style for your letter.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-3">
-              {(["classic", "modern", "premium"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTheme(t)}
-                  className={`rounded-lg border-2 p-3 text-left transition-all ${
-                    theme === t
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <div className="font-medium text-sm capitalize">{t}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {t === "classic" ? "Serif, traditional" : t === "modern" ? "Sans-serif, clean" : "Elegant, premium"}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Actions */}
-        <div className="flex justify-between items-center pt-4 border-t border-border">
+        <div className="flex justify-between items-center pt-2 pb-8">
           <Button variant="outline" onClick={() => setLocation("/dashboard")} className="gap-2">
             <ArrowLeft className="w-4 h-4" /> Back
           </Button>
-          <Button onClick={handleGenerate} disabled={isSubmitting} className="px-8 gap-2">
+          <Button onClick={handleFormat} disabled={isSubmitting} className="px-8 gap-2">
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Generating…
+                <Loader2 className="w-4 h-4 animate-spin" /> Formatting…
               </>
             ) : (
               <>
-                Generate Letter <ArrowRight className="w-4 h-4" />
+                Format Letter <ArrowRight className="w-4 h-4" />
               </>
             )}
           </Button>

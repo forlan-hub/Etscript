@@ -148,4 +148,5 @@ export type LetterData = {
   closing: string;
   signatoryName: string;
   signatoryTitle: string;
+  reference?: string;
 };

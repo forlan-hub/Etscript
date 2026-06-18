@@ -49,6 +49,7 @@ type LetterContent = {
   closing: string;
   signatoryName: string;
   signatoryTitle: string;
+  reference?: string;
 };
 
 const ACADEMIC_TYPES = new Set([
@@ -911,6 +912,12 @@ async function generateLetterPdfBuffer(
 
   doc.moveDown(2);
 
+  // ── Reference number ────────────────────────────────────────────────────
+  if (letter.reference) {
+    doc.font(boldFont).fontSize(fontSize - 1).text(`REF: ${letter.reference}`);
+    doc.moveDown(1);
+  }
+
   // ── Recipient block ──────────────────────────────────────────────────────
   doc.font(boldFont).fontSize(fontSize).text(letter.recipientName, { lineGap: 2 });
   doc.font(bodyFont);
@@ -1004,9 +1011,19 @@ async function generateLetterDocxBuffer(
     new Paragraph({
       alignment: AlignmentType.RIGHT,
       children: [new TextRun({ text: letter.date, size: fontSize })],
-      spacing: { before: 240, after: 480 },
+      spacing: { before: 240, after: letter.reference ? 240 : 480 },
     }),
   );
+
+  // Reference number
+  if (letter.reference) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: `REF: ${letter.reference}`, bold: true, size: fontSize - 2 })],
+        spacing: { after: 480 },
+      }),
+    );
+  }
 
   // Recipient block
   children.push(
@@ -1143,6 +1160,7 @@ function buildLetterPreviewHtml(letter: LetterContent, job: JobOptions): string 
     <div style="font-size:${fontSize}px">${senderBlock}</div>
     <div style="font-size:${fontSize}px;text-align:right">${esc(letter.date)}</div>
   </div>
+  ${letter.reference ? `<div style="font-weight:bold;font-size:${fontSize - 1}px;margin-bottom:1.5em;letter-spacing:0.02em">REF: ${esc(letter.reference)}</div>` : ""}
   <div style="margin-bottom:1.5em;font-size:${fontSize}px">${recipientBlock}</div>
   <p style="font-weight:bold;margin:0 0 1em;font-size:${fontSize}px">${esc(letter.subject)}</p>
   <p style="margin:0 0 0.8em;font-size:${fontSize}px">${esc(letter.salutation)}</p>
