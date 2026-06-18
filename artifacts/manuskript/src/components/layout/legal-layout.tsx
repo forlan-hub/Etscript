@@ -5,9 +5,10 @@ interface LegalLayoutProps {
   title: string;
   effectiveDate: string;
   children: React.ReactNode;
+  draft?: boolean;
 }
 
-export function LegalLayout({ title, effectiveDate, children }: LegalLayoutProps) {
+export function LegalLayout({ title, effectiveDate, children, draft = false }: LegalLayoutProps) {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -30,10 +31,12 @@ export function LegalLayout({ title, effectiveDate, children }: LegalLayoutProps
             <p className="text-sm text-muted-foreground mt-2">Effective date: {effectiveDate}</p>
           </div>
 
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-8 text-sm text-amber-800">
-            <strong>Notice:</strong> This document is currently being finalised by our legal team. The full text will be published here shortly. If you have questions in the meantime, contact us at{" "}
-            <a href="mailto:legal@etscript.com" className="underline hover:text-amber-900">legal@etscript.com</a>.
-          </div>
+          {draft && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-8 text-sm text-amber-800">
+              <strong>Notice:</strong> This document is currently being finalised by our legal team. The full text will be published here shortly. If you have questions in the meantime, contact us at{" "}
+              <a href="mailto:legal@etscript.com" className="underline hover:text-amber-900">legal@etscript.com</a>.
+            </div>
+          )}
 
           <div className="prose prose-stone max-w-none text-sm leading-relaxed space-y-6">
             {children}

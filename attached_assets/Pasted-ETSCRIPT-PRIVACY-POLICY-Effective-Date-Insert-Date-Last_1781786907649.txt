@@ -1,0 +1,250 @@
+ETSCRIPT PRIVACY POLICY
+Effective Date: [Insert Date]
+Last Updated: [Insert Date]
+1. INTRODUCTION
+Welcome to Etscript, a manuscript formatting and publishing preparation platform owned and operated by FurstoneTech Solutions Limited ("FurstoneTech", "Etscript", "we", "our", or "us").
+At Etscript, we are committed to protecting your privacy and ensuring that your personal data is processed lawfully, fairly, transparently, and securely. This Privacy Policy explains how we collect, use, store, disclose, and protect your personal information when you use our website and services available through etscript.site.
+This Privacy Policy has been developed in accordance with applicable data protection laws, including the Nigeria Data Protection Act (NDPA) 2023, the General Data Protection Regulation (GDPR) where applicable, and other relevant privacy laws.
+By accessing or using Etscript, you acknowledge that you have read and understood this Privacy Policy.
+________________________________________
+2. WHO WE ARE
+Etscript is a digital platform that enables users to upload manuscripts, apply professional formatting templates, preview formatted outputs, and export publication-ready documents.
+Data Controller
+FurstoneTech Solutions Limited
+[Insert Registered Business Address]
+Website: etscript.site
+Email: privacy@etscript.site
+For the purposes of applicable data protection laws, FurstoneTech Solutions Limited is the Data Controller responsible for the processing of your personal data.
+________________________________________
+3. PERSONAL DATA WE COLLECT
+We collect only the personal data necessary to provide and improve our services.
+A. Information You Provide Directly
+When you create an account or use our services, we may collect:
+•	Full name
+•	Email address
+•	Login credentials
+•	Account preferences
+•	Subscription selections
+•	Payment-related information
+•	Customer support communications
+________________________________________
+B. Manuscripts and User Content
+When you use Etscript, we may process:
+•	Manuscripts
+•	Books
+•	Training manuals
+•	Reports
+•	Research papers
+•	Templates
+•	Formatting preferences
+•	Generated exports
+You remain the sole owner of all content uploaded to the platform.
+________________________________________
+C. Authentication Information
+Where you choose to sign in using a third-party authentication service such as Google, we may receive:
+•	Name
+•	Email address
+Etscript does not intentionally collect profile photographs or unnecessary profile information.
+________________________________________
+D. Technical Information
+When you use our platform, we may automatically collect:
+•	IP address
+•	Browser type
+•	Device information
+•	Operating system
+•	Login timestamps
+•	Security logs
+•	Usage statistics necessary for platform operation
+This information is collected primarily for security, fraud prevention, and system administration purposes.
+________________________________________
+4. INFORMATION WE DO NOT COLLECT
+Consistent with the principle of data minimization, Etscript does not intentionally collect:
+•	Date of birth
+•	Gender
+•	Nationality
+•	Residential address
+•	Government-issued identification numbers
+•	Religious beliefs
+•	Political opinions
+•	Biometric information
+•	Social media profile data
+•	Sensitive personal information unless voluntarily included within user-uploaded documents
+________________________________________
+5. PURPOSES OF PROCESSING
+We process personal data for the following purposes:
+Service Delivery
+To:
+•	Create and manage user accounts
+•	Authenticate users
+•	Process manuscripts
+•	Apply formatting templates
+•	Generate exports
+•	Deliver subscription services
+________________________________________
+Payment Processing
+To:
+•	Process payments
+•	Manage subscriptions
+•	Verify transactions
+•	Prevent fraud
+________________________________________
+Customer Support
+To:
+•	Respond to enquiries
+•	Resolve technical issues
+•	Provide assistance
+________________________________________
+Security and Compliance
+To:
+•	Maintain platform security
+•	Detect unauthorized access
+•	Prevent fraud
+•	Comply with legal obligations
+________________________________________
+Business Analytics
+To generate internal operational metrics such as:
+•	Number of registered users
+•	Number of exports
+•	Subscription growth
+•	Revenue trends
+•	Template usage statistics
+Etscript does not use personal data for behavioural advertising or profiling.
+________________________________________
+6. LEGAL BASIS FOR PROCESSING
+We process personal data on one or more of the following lawful bases:
+Contractual Necessity
+Processing necessary to provide services requested by users.
+Consent
+Where users voluntarily provide consent for specific processing activities.
+Legal Obligation
+Processing required to comply with applicable laws and regulatory requirements.
+Legitimate Interests
+Processing necessary for:
+•	Platform security
+•	Fraud prevention
+•	Service improvement
+•	Operational analytics
+provided such interests do not override your rights and freedoms.
+________________________________________
+7. AUTOMATED PROCESSING
+Etscript uses automated systems to analyse document structure and apply selected formatting templates.
+This processing may influence:
+•	Document layout
+•	Chapter formatting
+•	Heading styles
+•	Readiness scores
+•	Export outputs
+Users retain control over formatting choices and may review and modify content before export.
+Etscript does not use automated processing to make decisions producing legal or similarly significant effects on users.
+________________________________________
+8. ARTIFICIAL INTELLIGENCE AND CONTENT PROCESSING
+Etscript's manuscript formatting services are designed to operate through rule-based formatting systems.
+Unless expressly disclosed and consented to in the future:
+•	User manuscripts are not used to train artificial intelligence models.
+•	User manuscripts are not sold to third parties.
+•	User manuscripts are not licensed for commercial use.
+•	Etscript does not claim ownership over uploaded content.
+Any future use of AI-powered features will be communicated transparently and may require separate user consent where applicable.
+________________________________________
+9. INTELLECTUAL PROPERTY OWNERSHIP
+Users retain full ownership of all manuscripts, books, reports, documents, and other content uploaded to Etscript.
+By uploading content to the platform, users grant Etscript only the limited rights necessary to process, format, store, and generate outputs requested by the user.
+Etscript does not acquire:
+•	Ownership rights
+•	Publishing rights
+•	Commercial exploitation rights
+•	Licensing rights
+•	Derivative rights
+over user content.
+________________________________________
+10. SHARING OF PERSONAL DATA
+We do not sell personal data.
+We may share information with trusted service providers that assist in delivering our services.
+These may include:
+Payment Processor
+Paystack
+For payment processing and subscription management.
+Database and Infrastructure Provider
+Supabase
+For secure data storage and authentication services.
+Email Service Provider
+Resend
+For transactional communications and account notifications.
+Authentication Provider
+Google OAuth
+Where users choose Google Sign-In.
+We may also disclose information where required by law or lawful government request.
+________________________________________
+11. INTERNATIONAL DATA TRANSFERS
+Some service providers may process data outside Nigeria.
+Where personal data is processed outside Nigeria, Etscript relies on reputable service providers that implement contractual, technical, and organizational safeguards designed to protect personal data in accordance with applicable data protection laws. 
+________________________________________
+12. DATA RETENTION
+We retain personal data only for as long as necessary to fulfil the purposes described in this Privacy Policy.
+Typical retention periods include:
+Data Category	Retention Period
+Active Account Data	Until account closure
+Manuscripts	Until deleted by user
+Generated Exports	Up to 90 days
+Deleted Content	Removed within 30 days
+Audit Logs	Up to 12 months
+Payment Records	Payment records shall be retained for as long as
+required by applicable tax, accounting, audit,
+fraud prevention, and legal obligations.
+Retention periods may be extended where required by law.
+________________________________________
+13. SECURITY OF PERSONAL DATA
+We implement reasonable technical and organizational measures designed to protect personal data against:
+•	Unauthorized access
+•	Accidental loss
+•	Destruction
+•	Disclosure
+•	Alteration
+Security measures may include:
+•	Encryption
+•	Secure authentication
+•	Access controls
+•	Monitoring and logging
+•	Secure hosting environments
+While no system is completely secure, we strive to protect personal data using industry-recognized security practices.
+________________________________________
+14. YOUR RIGHTS
+Subject to applicable law, you may have the right to:
+•	Access your personal data
+•	Correct inaccurate data
+•	Delete personal data
+•	Restrict processing
+•	Object to processing
+•	Withdraw consent
+•	Request data portability
+•	Lodge complaints with a competent data protection authority
+Requests may be submitted to:
+privacy@etscript.site
+________________________________________
+15. ACCOUNT DELETION
+Users may request deletion of their accounts and associated data.
+Upon receiving a valid deletion request, Etscript will:
+•	Delete account information
+•	Delete manuscripts
+•	Delete generated exports
+•	Remove stored preferences
+except where retention is required by law, fraud prevention obligations, accounting requirements, or ongoing legal proceedings.
+________________________________________
+16. CHILDREN'S PRIVACY
+Etscript is not intended for children under the age of 18.
+By creating an account, users represent that they are at least 18 years of age or otherwise legally authorized to use the platform under applicable law. If we become aware that a child has provided personal data without appropriate authorization, we will take reasonable steps to delete such information.
+________________________________________
+17. CHANGES TO THIS PRIVACY POLICY
+We may update this Privacy Policy from time to time.
+Where significant changes are made, users may be notified through:
+•	Website notices
+•	Email notifications
+•	In-platform alerts
+The updated version will always be available on etscript.site.
+________________________________________
+18. CONTACT US
+For questions, concerns, requests, or complaints relating to privacy or data protection, please contact:
+Privacy Office
+FurstoneTech Solutions Limited
+Website: etscript.site
+Email: privacy@etscript.site
