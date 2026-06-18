@@ -2,7 +2,7 @@ import { LegalLayout } from "@/components/layout/legal-layout";
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalLayout title="Privacy Policy" effectiveDate="[Insert Date] · Last Updated: [Insert Date]" draft={false}>
+    <LegalLayout title="Privacy Policy" effectiveDate="18 June 2026 · Last Updated: 18 June 2026" draft={false}>
       <section>
         <h2 className="text-lg font-serif font-semibold mb-2">1. Introduction</h2>
         <p className="text-muted-foreground">
