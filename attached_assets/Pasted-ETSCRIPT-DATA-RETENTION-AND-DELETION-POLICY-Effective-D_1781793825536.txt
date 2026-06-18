@@ -1,0 +1,337 @@
+ETSCRIPT DATA RETENTION AND DELETION POLICY
+Effective Date: June 18, 2026
+Last Updated: June 18, 2026
+
+1. INTRODUCTION
+This Data Retention and Deletion Policy explains how Etscript, a service operated by FurstoneTech Solutions Limited, retains, manages, archives, and deletes personal data and user content.
+
+This Policy complements the Etscript Privacy Policy and forms part of our commitment to privacy, transparency, accountability, and responsible data management.
+
+The purpose of this Policy is to ensure that personal data and user content are retained only for as long as necessary to:
+
+Provide Etscript services;
+
+Maintain platform security;
+
+Fulfil contractual obligations;
+
+Comply with legal, regulatory, accounting, and audit requirements; and
+
+Protect the rights of users and FurstoneTech Solutions Limited.
+
+2. GUIDING PRINCIPLES
+Etscript applies the following principles when retaining and deleting information:
+
+Data Minimization
+We retain only the information necessary to operate the platform and fulfil legitimate business purposes.
+
+Storage Limitation
+Information shall not be retained indefinitely unless required by law or specifically requested by the user.
+
+User Control
+Users retain control over their manuscripts and may request deletion of their content and account data in accordance with this Policy.
+
+Privacy by Design
+Retention periods are designed to balance user convenience, platform functionality, security, and legal compliance.
+
+3. CATEGORIES OF DATA RETAINED
+The categories of information retained by Etscript include:
+
+Account Information
+Name
+
+Email address
+
+Authentication credentials
+
+Account preferences
+
+User Content
+Manuscripts
+
+Books
+
+Research papers
+
+Academic projects
+
+Business documents
+
+Professional letters
+
+Custom templates created by users
+
+Generated Outputs
+Exported PDF files
+
+Exported DOCX files
+
+Other generated document outputs
+
+Transaction Information
+Subscription records
+
+Payment confirmations
+
+Billing history
+
+Invoice records
+
+Technical Information
+Login history
+
+Security logs
+
+Audit logs
+
+Authentication events
+
+4. RETENTION SCHEDULE
+A. User Accounts
+Active Accounts
+Account information shall be retained for as long as the account remains active.
+
+Inactive Accounts
+Accounts with no activity for an extended period may be reviewed for archival or deletion after appropriate notice to the user.
+
+No automatic deletion shall occur solely because a subscription expires.
+
+B. Manuscripts and User Content
+User Manuscripts
+User manuscripts shall remain stored until:
+
+Deleted by the user; or
+
+Deleted through an approved account deletion process.
+
+Subscription expiry shall not trigger manuscript deletion.
+
+Users shall retain access to view stored manuscripts even when subscriptions have expired.
+
+C. Generated Exports
+Generated exports shall be retained for a maximum period of:
+
+90 Days
+After 90 days:
+
+Exports may be automatically deleted;
+
+Users may generate new exports where their plan permits.
+
+This retention period helps manage storage costs while providing reasonable access to previously generated files.
+
+D. Deleted Content
+When a user deletes content:
+
+Initial Deletion Stage
+Content is marked for deletion and removed from normal user access.
+
+Permanent Deletion Stage
+Content shall be permanently deleted within:
+
+30 Days
+except where retention is required for:
+
+Legal obligations;
+
+Fraud investigations;
+
+Security incidents;
+
+Ongoing disputes.
+
+E. Audit Logs
+Audit and security logs shall generally be retained for:
+
+12 Months
+This includes:
+
+Login activity
+
+Security events
+
+Authentication logs
+
+Administrative actions
+
+Retention supports security monitoring, incident response, and fraud prevention.
+
+F. Payment and Financial Records
+Payment-related records shall be retained for as long as required by:
+
+Applicable tax laws;
+
+Accounting obligations;
+
+Audit requirements;
+
+Fraud prevention obligations;
+
+Other applicable legal or regulatory requirements.
+
+Such records may be retained even after account deletion where legally necessary.
+
+5. SUBSCRIPTION EXPIRY AND CONTENT RETENTION
+Expiration of a subscription does not result in:
+
+Account deletion;
+
+Manuscript deletion;
+
+Template deletion;
+
+User profile deletion.
+
+After subscription expiry, users may continue to:
+
+Access their accounts;
+
+View manuscripts;
+
+Renew subscriptions;
+
+Purchase one-time export services.
+
+Users may not use premium formatting or export features until payment requirements are satisfied.
+
+6. ACCOUNT DELETION REQUESTS
+Users may request deletion of their account through:
+
+Settings Menu
+Options:
+
+Delete My Account
+
+Delete My Data
+
+or
+
+Contact Request
+privacy@etscript.site
+
+7. WHAT HAPPENS WHEN AN ACCOUNT IS DELETED
+Upon a valid deletion request, Etscript shall take reasonable steps to remove:
+
+Personal Information
+Name
+
+Email address
+
+Profile settings
+
+Authentication data
+
+User Content
+Manuscripts
+
+Projects
+
+Research papers
+
+Business documents
+
+Saved drafts
+
+Generated Outputs
+Export files
+
+Generated document packages
+
+Custom Templates
+User-created formatting templates
+
+Deletion shall normally be completed within the timelines specified in this Policy.
+
+8. INFORMATION THAT MAY BE RETAINED AFTER DELETION
+Certain information may be retained where necessary for:
+
+Legal Compliance
+Tax obligations
+
+Accounting obligations
+
+Regulatory obligations
+
+Security
+Fraud investigations
+
+Security incident investigations
+
+Dispute Resolution
+Enforcement of legal rights
+
+Contractual claims
+
+Litigation support
+
+Where possible, retained information shall be limited to the minimum necessary.
+
+9. BACKUPS AND RECOVERY SYSTEMS
+To ensure service reliability and business continuity, Etscript may maintain secure backup copies of certain information.
+
+Backup data:
+
+Is protected by appropriate security controls;
+
+Is not routinely accessible to users;
+
+Is retained only for disaster recovery and operational continuity purposes.
+
+Where deleted information exists within backup systems, it shall be removed in accordance with backup rotation schedules and operational requirements.
+
+10. USER RESPONSIBILITY
+Users are encouraged to maintain their own copies of:
+
+Manuscripts;
+
+Research projects;
+
+Books;
+
+Business documents;
+
+Generated exports.
+
+While Etscript strives to maintain reliable systems, users remain responsible for preserving copies of important content.
+
+11. INTERNATIONAL DATA STORAGE
+Certain service providers used by Etscript may store or process information outside Nigeria.
+
+Where international processing occurs, Etscript relies on service providers that implement technical, contractual, and organizational safeguards designed to protect personal data.
+
+12. POLICY ENFORCEMENT
+FurstoneTech Solutions Limited shall periodically review retention practices to ensure compliance with:
+
+Applicable data protection laws;
+
+Security requirements;
+
+Business needs;
+
+Platform operations.
+
+Retention periods may be updated where necessary to reflect legal or operational changes.
+
+13. CHANGES TO THIS POLICY
+We may update this Data Retention and Deletion Policy from time to time.
+
+Material changes may be communicated through:
+
+Website notices;
+
+Email notifications;
+
+In-platform alerts.
+
+The most current version shall always be available at etscript.site.
+
+14. CONTACT INFORMATION
+For questions regarding this Policy or requests relating to data retention or deletion, please contact:
+
+Privacy Office
+FurstoneTech Solutions Limited
+Website: etscript.site
+Email: privacy@etscript.site
+
+Etscript Retention Commitment
+Etscript is designed around the principle that users own their content. We retain information only for as long as necessary to provide our services, comply with legal obligations, maintain security, and support user access to their manuscripts. We do not retain content indefinitely without purpose, nor do we delete user manuscripts solely because a subscription has expired.
