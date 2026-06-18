@@ -17,10 +17,16 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const allConsentsGiven = termsAccepted && privacyAccepted && ageConfirmed;
 
   useEffect(() => {
     if (!loading && user) {
@@ -34,6 +40,15 @@ export default function SignInPage() {
     setSuccessMsg(null);
   };
 
+  const handleGoogleSignIn = () => {
+    if (tab === "signup" && !allConsentsGiven) {
+      setError("Please confirm all three requirements above before continuing.");
+      return;
+    }
+    setError(null);
+    signInWithGoogle();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -44,8 +59,8 @@ export default function SignInPage() {
       return;
     }
 
-    if (tab === "signup" && !ageConfirmed) {
-      setError("You must confirm you are at least 18 years old to create an account.");
+    if (tab === "signup" && !allConsentsGiven) {
+      setError("Please confirm all three requirements above before creating an account.");
       return;
     }
 
@@ -67,6 +82,8 @@ export default function SignInPage() {
           setTab("signin");
           setEmail("");
           setPassword("");
+          setTermsAccepted(false);
+          setPrivacyAccepted(false);
           setAgeConfirmed(false);
         }
       }
@@ -120,12 +137,90 @@ export default function SignInPage() {
             </button>
           </div>
 
+          {/* Mandatory consent checkboxes — signup only */}
+          {tab === "signup" && (
+            <div className="rounded-lg border border-border bg-muted/20 px-4 py-4 space-y-3">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                Before you continue
+              </p>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="terms-accept"
+                  checked={termsAccepted}
+                  onCheckedChange={(v) => setTermsAccepted(!!v)}
+                  disabled={submitting}
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="terms-accept"
+                  className="text-sm text-muted-foreground leading-snug cursor-pointer"
+                >
+                  I have read and agree to the{" "}
+                  <a
+                    href="/legal/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Terms of Use
+                  </a>
+                </label>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="privacy-accept"
+                  checked={privacyAccepted}
+                  onCheckedChange={(v) => setPrivacyAccepted(!!v)}
+                  disabled={submitting}
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="privacy-accept"
+                  className="text-sm text-muted-foreground leading-snug cursor-pointer"
+                >
+                  I have read and understand the{" "}
+                  <a
+                    href="/legal/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="age-confirm"
+                  checked={ageConfirmed}
+                  onCheckedChange={(v) => setAgeConfirmed(!!v)}
+                  disabled={submitting}
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="age-confirm"
+                  className="text-sm text-muted-foreground leading-snug cursor-pointer"
+                >
+                  I confirm that I am at least{" "}
+                  <span className="font-medium text-foreground">18 years old</span> and eligible
+                  to use Etscript
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Google button */}
           <Button
-            onClick={signInWithGoogle}
+            onClick={handleGoogleSignIn}
             variant="outline"
             className="w-full h-11 gap-3 text-sm font-medium"
             type="button"
+            disabled={tab === "signup" && !allConsentsGiven}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -199,24 +294,6 @@ export default function SignInPage() {
               </div>
             </div>
 
-            {tab === "signup" && (
-              <div className="flex items-start gap-3 pt-1">
-                <Checkbox
-                  id="age-confirm"
-                  checked={ageConfirmed}
-                  onCheckedChange={(v) => setAgeConfirmed(!!v)}
-                  disabled={submitting}
-                  className="mt-0.5"
-                />
-                <label
-                  htmlFor="age-confirm"
-                  className="text-sm text-muted-foreground leading-snug cursor-pointer"
-                >
-                  I confirm that I am at least <span className="font-medium text-foreground">18 years old</span> and eligible to use Etscript.
-                </label>
-              </div>
-            )}
-
             {error && (
               <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
                 {error}
@@ -232,7 +309,7 @@ export default function SignInPage() {
             <Button
               type="submit"
               className="w-full h-11 font-medium"
-              disabled={submitting}
+              disabled={submitting || (tab === "signup" && !allConsentsGiven)}
             >
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {tab === "signin" ? "Sign In" : "Create Account"}

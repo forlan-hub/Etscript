@@ -1,0 +1,190 @@
+ETSCRIPT USER CONSENT NOTICE
+Effective Date: June 18, 2026
+Last Updated: June 18, 2026
+
+1. INTRODUCTION
+This User Consent Notice explains how Etscript, a service operated by FurstoneTech Solutions Limited, obtains, manages, and records user consent for the collection and processing of personal data.
+
+By creating an account, using Etscript, or interacting with our services, you may be asked to provide consent for specific processing activities described in this Notice.
+
+Consent is one of the lawful bases upon which Etscript may process personal data, alongside contractual necessity, legal obligations, and legitimate interests where applicable.
+
+2. CONSENT DURING ACCOUNT REGISTRATION
+During account creation, users shall be required to acknowledge the following:
+
+Terms of Use
+☐ I have read and agree to the Etscript Terms of Use.
+
+Privacy Policy
+☐ I have read and understand the Etscript Privacy Policy.
+
+Age Confirmation
+☐ I confirm that I am at least 18 years old and eligible to use Etscript.
+
+Users shall not be able to complete registration without accepting these mandatory acknowledgements.
+
+3. CONSENT FOR PERSONAL DATA PROCESSING
+By creating an account and using Etscript, users consent to the processing of personal data necessary to:
+
+Create and manage accounts;
+
+Authenticate users;
+
+Store manuscripts and documents;
+
+Apply formatting templates;
+
+Generate exports;
+
+Process payments;
+
+Deliver customer support;
+
+Maintain platform security.
+
+The personal data collected shall be limited to what is necessary to provide these services.
+
+4. CONSENT FOR MANUSCRIPT PROCESSING
+By uploading content to Etscript, users consent to the processing of their documents solely for the purpose of:
+
+Formatting manuscripts;
+
+Applying selected templates;
+
+Generating exports;
+
+Storing user content;
+
+Providing requested platform features.
+
+Etscript does not claim ownership of uploaded content.
+
+Users retain full ownership of all manuscripts and documents uploaded to the platform.
+
+5. EMAIL COMMUNICATION CONSENT
+Certain communications are necessary for the operation of Etscript.
+
+These communications may include:
+
+Service Communications
+Account verification
+
+Password reset emails
+
+Login alerts
+
+Security notifications
+
+Subscription notices
+
+Billing notifications
+
+These communications are considered necessary for service delivery and may be sent regardless of marketing preferences.
+
+6. OPTIONAL MARKETING CONSENT
+Where marketing communications are introduced, Etscript shall obtain separate consent.
+
+Example:
+
+☐ I would like to receive product updates, announcements, educational content, and promotional communications from Etscript.
+
+Users may withdraw marketing consent at any time.
+
+Marketing consent shall not be required to use Etscript.
+
+7. COOKIE CONSENT
+Etscript uses essential cookies necessary for:
+
+Authentication;
+
+Security;
+
+Session management;
+
+Platform functionality.
+
+Where additional categories of cookies are introduced in the future, users shall be provided with appropriate notice and consent options where required by law.
+
+Further details are available in the Etscript Cookie Notice.
+
+8. CONSENT FOR PAYMENT PROCESSING
+When making payments through Etscript, users consent to the processing of payment-related information by authorized payment providers for the purpose of:
+
+Processing transactions;
+
+Managing subscriptions;
+
+Preventing fraud;
+
+Meeting legal and accounting obligations.
+
+Etscript does not store full payment card information.
+
+Payment processing is performed by authorized third-party payment providers.
+
+9. THIRD-PARTY SERVICE PROVIDERS
+Users acknowledge that Etscript relies on trusted service providers to deliver its services.
+
+These providers may include:
+
+Supabase (data storage and authentication)
+
+Paystack (payment processing)
+
+Resend (email delivery)
+
+Google OAuth (authentication)
+
+Where necessary, personal data may be processed by such providers solely for service delivery purposes.
+
+10. WITHDRAWAL OF CONSENT
+Where processing is based on consent, users may withdraw consent at any time.
+
+Withdrawal of consent does not affect the lawfulness of processing carried out before the withdrawal.
+
+Users may withdraw consent by:
+
+Updating account settings;
+
+Contacting privacy@etscript.site;
+
+Using available unsubscribe mechanisms.
+
+Please note that withdrawing consent for certain processing activities may affect the availability of some platform features.
+
+11. CONSENT RECORDS
+Etscript may maintain records of:
+
+Consent provided;
+
+Consent withdrawals;
+
+Acceptance timestamps;
+
+Policy versions accepted.
+
+These records are maintained to demonstrate compliance with applicable legal and regulatory requirements.
+
+12. CHANGES TO THIS NOTICE
+Etscript may update this User Consent Notice from time to time.
+
+Where material changes are made, users may be notified through:
+
+Website notices;
+
+Email notifications;
+
+In-platform notifications.
+
+Continued use of the platform following such updates may require renewed acknowledgement where applicable.
+
+13. CONTACT INFORMATION
+For questions relating to consent, privacy, or personal data processing, please contact:
+
+Privacy Office
+FurstoneTech Solutions Limited
+Website: etscript.site
+Email: privacy@etscript.site
+
+Consent Commitment
+Etscript is committed to obtaining consent transparently, processing personal data responsibly, and giving users meaningful control over how their information is used. Consent is never bundled with unrelated purposes, and users are free to withdraw optional consents without losing access to core platform functionality.
