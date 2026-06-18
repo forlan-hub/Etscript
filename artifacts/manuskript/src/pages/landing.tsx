@@ -88,8 +88,15 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="py-8 px-4 md:px-6 border-t border-border text-center text-sm text-muted-foreground">
+      <footer className="py-8 px-4 md:px-6 border-t border-border text-center text-sm text-muted-foreground space-y-3">
         <p>© {new Date().getFullYear()} Etscript. All rights reserved.</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+          <Link href="/legal/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <Link href="/legal/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
+          <Link href="/legal/cookies" className="hover:text-foreground transition-colors">Cookie Notice</Link>
+          <Link href="/legal/data-retention" className="hover:text-foreground transition-colors">Data Retention</Link>
+          <Link href="/legal/consent" className="hover:text-foreground transition-colors">User Consent</Link>
+        </div>
       </footer>
     </div>
   );

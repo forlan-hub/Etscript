@@ -28,6 +28,11 @@ import AdminDashboardPage from "./pages/admin/index";
 import AdminUsersPage from "./pages/admin/users";
 import AdminTransactionsPage from "./pages/admin/transactions";
 import AdminActivityPage from "./pages/admin/activity";
+import PrivacyPolicyPage from "./pages/legal-privacy";
+import TermsOfUsePage from "./pages/legal-terms";
+import CookieNoticePage from "./pages/legal-cookies";
+import DataRetentionPage from "./pages/legal-data-retention";
+import UserConsentNoticePage from "./pages/legal-consent";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +104,11 @@ function AppRoutes() {
       <Route path="/admin/transactions" component={AdminTransactionsPage} />
       <Route path="/admin/activity" component={AdminActivityPage} />
       <Route path="/admin" component={AdminDashboardPage} />
+      <Route path="/legal/privacy" component={PrivacyPolicyPage} />
+      <Route path="/legal/terms" component={TermsOfUsePage} />
+      <Route path="/legal/cookies" component={CookieNoticePage} />
+      <Route path="/legal/data-retention" component={DataRetentionPage} />
+      <Route path="/legal/consent" component={UserConsentNoticePage} />
       <Route component={NotFoundPage} />
     </Switch>
   );

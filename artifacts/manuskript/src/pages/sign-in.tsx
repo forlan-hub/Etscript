@@ -242,9 +242,9 @@ export default function SignInPage() {
 
         <p className="text-center text-xs text-muted-foreground">
           By signing in, you agree to our{" "}
-          <span className="underline cursor-pointer hover:text-foreground">Terms of Service</span>
+          <a href="/legal/terms" className="underline hover:text-foreground">Terms of Use</a>
           {" "}and{" "}
-          <span className="underline cursor-pointer hover:text-foreground">Privacy Policy</span>
+          <a href="/legal/privacy" className="underline hover:text-foreground">Privacy Policy</a>
         </p>
       </div>
     </div>
