@@ -12,8 +12,11 @@ import {
   useCreateJob,
   useGetUploadUrl,
   useGetStorageLimits,
+  useListManuscripts,
+  useDeleteManuscript,
 } from "@workspace/api-client-react";
-import { UploadCloud, File, AlertCircle, CheckCircle2, HardDrive, BookOpen, ArrowRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { UploadCloud, File, AlertCircle, CheckCircle2, HardDrive, BookOpen, ArrowRight, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowStepper } from "@/components/workflow-stepper";
 
@@ -30,16 +33,22 @@ const PLAN_LABELS: Record<string, string> = {
   premium: "Premium",
 };
 
-function StorageUsageBar({ plan, usedManuscripts, maxManuscripts, usedStorageBytes, maxStorageBytes }: {
+type ManuscriptItem = { id: number; title: string };
+
+function StorageUsageBar({ plan, usedManuscripts, maxManuscripts, usedStorageBytes, maxStorageBytes, manuscripts, onDelete }: {
   plan: string;
   usedManuscripts: number;
   maxManuscripts: number;
   usedStorageBytes: number;
   maxStorageBytes: number;
+  manuscripts: ManuscriptItem[];
+  onDelete: (id: number) => void;
 }) {
+  const [showManuscripts, setShowManuscripts] = useState(false);
   const msPercent = Math.min(100, (usedManuscripts / maxManuscripts) * 100);
   const storagePercent = Math.min(100, (usedStorageBytes / maxStorageBytes) * 100);
   const atManuscriptLimit = usedManuscripts >= maxManuscripts;
+  const overLimit = usedManuscripts > maxManuscripts;
 
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
@@ -53,14 +62,15 @@ function StorageUsageBar({ plan, usedManuscripts, maxManuscripts, usedStorageByt
         </Badge>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
+      {/* Manuscript slots */}
+      <div className="rounded-md border border-border bg-background px-3 py-2.5 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
             <BookOpen className="w-3 h-3" />
-            Manuscripts
+            Manuscript slots
           </span>
-          <span className={atManuscriptLimit ? "text-destructive font-medium" : ""}>
-            {usedManuscripts} / {maxManuscripts}
+          <span className={atManuscriptLimit ? "text-destructive font-semibold" : "text-muted-foreground"}>
+            {usedManuscripts} / {maxManuscripts} slots{overLimit ? " — over limit" : ""}
           </span>
         </div>
         <Progress
@@ -69,27 +79,63 @@ function StorageUsageBar({ plan, usedManuscripts, maxManuscripts, usedStorageByt
         />
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
+      {/* Storage space — separate visual block */}
+      <div className="rounded-md border border-border bg-background px-3 py-2.5 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
             <HardDrive className="w-3 h-3" />
-            Storage
+            Storage space
           </span>
-          <span>{formatBytes(usedStorageBytes)} / {formatBytes(maxStorageBytes)}</span>
+          <span className="text-muted-foreground">
+            {formatBytes(usedStorageBytes)} / {formatBytes(maxStorageBytes)} used
+          </span>
         </div>
         <Progress value={storagePercent} className="h-1.5" />
       </div>
 
       {atManuscriptLimit && (
-        <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-destructive">
-            Manuscript limit reached. Delete one or upgrade your plan.
-          </p>
-          <Link href="/pricing">
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-              Upgrade <ArrowRight className="w-3 h-3" />
-            </Button>
-          </Link>
+        <div className="space-y-2 pt-0.5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-destructive font-medium">
+              Slot limit reached — delete a manuscript to upload a new one, or upgrade your plan.
+            </p>
+            <Link href="/pricing">
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 ml-3 shrink-0">
+                Upgrade <ArrowRight className="w-3 h-3" />
+              </Button>
+            </Link>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-7 text-xs border border-dashed border-border gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowManuscripts((v) => !v)}
+          >
+            {showManuscripts ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showManuscripts ? "Hide" : "Show"} manuscripts to delete
+          </Button>
+          {showManuscripts && (
+            <div className="rounded-md border border-border bg-background divide-y divide-border overflow-hidden">
+              {manuscripts.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-3 py-3">No manuscripts found.</p>
+              ) : (
+                manuscripts.map((ms) => (
+                  <div key={ms.id} className="flex items-center justify-between px-3 py-2 gap-3">
+                    <span className="text-xs text-foreground truncate">{ms.title}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      onClick={() => onDelete(ms.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span className="ml-1 text-xs">Delete</span>
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -105,10 +151,24 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [step, setStep] = useState<"idle" | "creating" | "uploading" | "done">("idle");
 
+  const queryClient = useQueryClient();
   const createManuscript = useCreateManuscript();
   const getUploadUrl = useGetUploadUrl();
   const createJob = useCreateJob();
   const { data: storageLimits } = useGetStorageLimits();
+  const { data: manuscripts } = useListManuscripts();
+  const deleteManuscript = useDeleteManuscript();
+
+  const handleDeleteManuscript = async (id: number) => {
+    try {
+      await deleteManuscript.mutateAsync({ id });
+      queryClient.invalidateQueries({ queryKey: ["/api/manuscripts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/storage/limits"] });
+      toast({ title: "Manuscript deleted", description: "Slot freed up — you can upload a new one." });
+    } catch {
+      toast({ title: "Delete failed", description: "Could not delete the manuscript. Please try again.", variant: "destructive" });
+    }
+  };
 
   const atManuscriptLimit =
     storageLimits != null && storageLimits.usedManuscripts >= storageLimits.maxManuscripts;
@@ -221,6 +281,8 @@ export default function UploadPage() {
             maxManuscripts={storageLimits.maxManuscripts}
             usedStorageBytes={storageLimits.usedStorageBytes}
             maxStorageBytes={storageLimits.maxStorageBytes}
+            manuscripts={manuscripts ?? []}
+            onDelete={handleDeleteManuscript}
           />
         )}
 
