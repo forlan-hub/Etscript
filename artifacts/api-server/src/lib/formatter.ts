@@ -13,6 +13,7 @@ import {
   PageBreak,
 } from "docx";
 import mammoth from "mammoth";
+import pdfParse from "pdf-parse";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 type JobOptions = {
@@ -102,9 +103,74 @@ export class MissingUploadError extends Error {
   }
 }
 
+// ── Section classification ────────────────────────────────────────────────────
+
+export type SectionKind =
+  | "cover" | "title_page" | "copyright" | "disclaimer" | "reader_notice"
+  | "dedication" | "foreword" | "preface" | "introduction"
+  | "chapter" | "bonus_chapter"
+  | "appendix" | "conclusion" | "epilogue" | "about_author"
+  | "generic";
+
+const SECTION_KIND_LABELS: Record<SectionKind, string> = {
+  cover: "Cover",
+  title_page: "Title Page",
+  copyright: "Copyright",
+  disclaimer: "Disclaimer",
+  reader_notice: "Reader Notice",
+  dedication: "Dedication",
+  foreword: "Foreword",
+  preface: "Preface",
+  introduction: "Introduction",
+  chapter: "Chapter",
+  bonus_chapter: "Bonus Chapter",
+  appendix: "Appendix",
+  conclusion: "Conclusion",
+  epilogue: "Epilogue",
+  about_author: "About the Author",
+  generic: "",
+};
+
+/** Front-matter and back-matter section kinds (rendered without chapter numbering). */
+const NAMED_SECTION_KINDS = new Set<SectionKind>([
+  "cover", "title_page", "copyright", "disclaimer", "reader_notice",
+  "dedication", "foreword", "preface", "introduction",
+  "appendix", "conclusion", "epilogue", "about_author",
+]);
+
+function classifySection(title: string, index: number, paragraphs: string[]): SectionKind {
+  const t = title.trim().toLowerCase();
+
+  if (!t) {
+    const body = paragraphs.join(" ").toLowerCase();
+    if (/copyright|©|all rights reserved/i.test(body)) return "copyright";
+    if (/^dedicated to|^for /i.test(body)) return "dedication";
+    return index === 0 ? "title_page" : "generic";
+  }
+
+  if (/^(cover|cover\s*page)$/i.test(t)) return "cover";
+  if (/^(title|title\s*page)$/i.test(t)) return "title_page";
+  if (/^copyright$/i.test(t) || /©/.test(title)) return "copyright";
+  if (/^disclaimer$/i.test(t)) return "disclaimer";
+  if (/^reader'?s?\s*notice$/i.test(t)) return "reader_notice";
+  if (/^dedication$/i.test(t)) return "dedication";
+  if (/^foreword$/i.test(t)) return "foreword";
+  if (/^preface$/i.test(t)) return "preface";
+  if (/^introduction$/i.test(t)) return "introduction";
+  if (/^conclusion$/i.test(t)) return "conclusion";
+  if (/^epilogue$/i.test(t)) return "epilogue";
+  if (/^bonus\s*chapter/i.test(t)) return "bonus_chapter";
+  if (/^appendix/i.test(t)) return "appendix";
+  if (/^about\s*(the\s*)?(author|authors|me)$/i.test(t)) return "about_author";
+  if (/^(chapter|part|section)\s+[\w]+/i.test(t) || /^\d+\./.test(t)) return "chapter";
+  return "generic";
+}
+
 type Chapter = {
   title: string;
-  paragraphs: string[];
+  paragraphs: string[];  // empty-string entries represent intentional blank lines
+  kind: SectionKind;
+  pageBreakBefore: boolean;
 };
 
 /** True when a title string is a recognised chapter/section heading. */
@@ -112,6 +178,18 @@ function isChapterHeading(title: string): boolean {
   return /^(chapter|part|section|prologue|epilogue|introduction|preface|foreword|afterword)/i.test(
     title.trim(),
   );
+}
+
+/**
+ * Returns the display label for a chapter in PDF/DOCX output.
+ * Named sections (dedication, copyright, etc.) use their title directly.
+ * Plain chapters use the detected heading or a generated "Chapter N" label.
+ */
+function sectionLabel(chapter: Chapter, bodyChapterIndex: number, style: string | null): string {
+  if (NAMED_SECTION_KINDS.has(chapter.kind) && chapter.title.trim()) {
+    return chapter.title;
+  }
+  return isChapterHeading(chapter.title) ? chapter.title : chapterLabel(bodyChapterIndex, style);
 }
 
 type TitlePageContent = {
@@ -166,7 +244,7 @@ function extractTitlePage(chapters: Chapter[]): TitlePageContent {
 
     if (lines.length > 0) {
       bodyChapters = [
-        { title: first.title, paragraphs: first.paragraphs.slice(splitIdx) },
+        { title: first.title, paragraphs: first.paragraphs.slice(splitIdx), kind: first.kind, pageBreakBefore: first.pageBreakBefore },
         ...chapters.slice(1),
       ];
     } else {
@@ -194,21 +272,6 @@ function outputFileKey(jobId: number, format: "pdf" | "docx"): string {
   return `jobs/${jobId}/formatted.${format}`;
 }
 
-async function extractTextFromBuffer(buffer: Buffer, filename: string): Promise<string> {
-  const ext = (filename ?? "").toLowerCase().split(".").pop();
-
-  if (ext === "txt") {
-    return buffer.toString("utf-8");
-  }
-
-  if (ext === "docx") {
-    const result = await mammoth.extractRawText({ buffer });
-    return result.value;
-  }
-
-  return "";
-}
-
 async function downloadManuscriptBuffer(fileKey: string): Promise<Buffer> {
   const service = new ObjectStorageService();
   let objectFile;
@@ -222,20 +285,188 @@ async function downloadManuscriptBuffer(fileKey: string): Promise<Buffer> {
   return contents;
 }
 
+// ── HTML tokeniser (for mammoth convertToHtml output) ────────────────────────
+
+type HtmlToken =
+  | { kind: "heading"; level: 1 | 2 | 3; text: string }
+  | { kind: "paragraph"; text: string }
+  | { kind: "page_break" };
+
+function decodeHtmlEntities(s: string): string {
+  return s
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
+function tokenizeHtml(html: string): HtmlToken[] {
+  const tokens: HtmlToken[] = [];
+  const re = /<(h[123]|p|hr)(?:\s[^>]*)?>([^]*?)<\/\1>|<hr\s*\/?>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const tag = (m[1] ?? "hr").toLowerCase();
+    const text = decodeHtmlEntities(m[2] ?? "");
+    if (tag === "hr") {
+      tokens.push({ kind: "page_break" });
+    } else if (tag === "h1") {
+      if (text) tokens.push({ kind: "heading", level: 1, text });
+    } else if (tag === "h2") {
+      if (text) tokens.push({ kind: "heading", level: 2, text });
+    } else if (tag === "h3") {
+      if (text) tokens.push({ kind: "heading", level: 3, text });
+    } else {
+      // paragraph — detect [PAGE_BREAK] / [NEW_PAGE] markers
+      if (/\[PAGE_BREAK\]|\[NEW_PAGE\]/i.test(text)) {
+        tokens.push({ kind: "page_break" });
+      } else {
+        tokens.push({ kind: "paragraph", text });
+      }
+    }
+  }
+  return tokens;
+}
+
+function groupTokensToChapters(tokens: HtmlToken[], fallbackTitle: string): Chapter[] {
+  const chapters: Chapter[] = [];
+  let currentTitle = "";
+  let currentParagraphs: string[] = [];
+  let pendingPageBreak = false;
+
+  const flush = () => {
+    if (currentTitle || currentParagraphs.some((p) => p.trim())) {
+      const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+      chapters.push({ title: currentTitle, paragraphs: currentParagraphs, kind, pageBreakBefore: pendingPageBreak });
+    }
+    pendingPageBreak = false;
+  };
+
+  for (const token of tokens) {
+    if (token.kind === "page_break") {
+      flush();
+      currentTitle = "";
+      currentParagraphs = [];
+      pendingPageBreak = true;
+    } else if (token.kind === "heading") {
+      flush();
+      currentTitle = token.text;
+      currentParagraphs = [];
+    } else {
+      currentParagraphs.push(token.text); // preserve empty strings (blank lines)
+    }
+  }
+  flush();
+
+  if (chapters.length === 0 && fallbackTitle) {
+    chapters.push({ title: fallbackTitle, paragraphs: [], kind: "generic", pageBreakBefore: false });
+  }
+  return chapters;
+}
+
+// ── DOCX parser: mammoth convertToHtml → structured sections ─────────────────
+
+async function parseDocxToChapters(buffer: Buffer, manuscriptTitle: string): Promise<Chapter[]> {
+  // Use convertToHtml to preserve headings, paragraph structure, and blank lines
+  const result = await mammoth.convertToHtml({ buffer });
+  const tokens = tokenizeHtml(result.value);
+  return groupTokensToChapters(tokens, manuscriptTitle);
+}
+
+// ── PDF parser: pdf-parse → text → structured sections ───────────────────────
+
+async function parsePdfToChapters(buffer: Buffer, manuscriptTitle: string): Promise<Chapter[]> {
+  try {
+    const data = await pdfParse(buffer);
+    return parseTxtToChapters(data.text, manuscriptTitle);
+  } catch {
+    return [{
+      title: manuscriptTitle,
+      paragraphs: ["Could not parse this PDF. Try converting it to DOCX or TXT first."],
+      kind: "generic",
+      pageBreakBefore: false,
+    }];
+  }
+}
+
+// ── Plain-text parser (TXT + PDF fallback) ───────────────────────────────────
+
+function parseTxtToChapters(text: string, manuscriptTitle: string): Chapter[] {
+  if (!text.trim()) {
+    return [
+      { title: "Chapter One", paragraphs: SAMPLE_PARAGRAPHS, kind: "chapter", pageBreakBefore: false },
+      { title: "Chapter Two", paragraphs: [...SAMPLE_PARAGRAPHS.slice(2), SAMPLE_PARAGRAPHS[0], SAMPLE_PARAGRAPHS[1]], kind: "chapter", pageBreakBefore: false },
+    ];
+  }
+
+  const headingRe =
+    /^(chapter\s+[\w]+|part\s+[\w]+|section\s+[\w]+|prologue|epilogue|introduction|preface|foreword|afterword|dedication|copyright|disclaimer|reader'?s?\s*notice|bonus\s+chapter\s+[\w]+|appendix\s*[\w]*|conclusion|about\s+the\s+author)[\s:—]*/i;
+
+  const lines = text.split(/\r?\n/);
+  const chapters: Chapter[] = [];
+  let currentTitle = "";
+  let currentParagraphs: string[] = [];
+  let buffer = "";
+  let pendingPageBreak = false;
+
+  const flushBuffer = () => {
+    const trimmed = buffer.trim();
+    if (trimmed) currentParagraphs.push(trimmed);
+    else if (buffer.length > 0 && currentParagraphs.length > 0) currentParagraphs.push(""); // intentional blank
+    buffer = "";
+  };
+
+  const flushSection = () => {
+    flushBuffer();
+    if (currentTitle || currentParagraphs.some((p) => p.trim())) {
+      const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+      chapters.push({ title: currentTitle, paragraphs: currentParagraphs, kind, pageBreakBefore: pendingPageBreak });
+    }
+    currentTitle = "";
+    currentParagraphs = [];
+    pendingPageBreak = false;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/\[PAGE_BREAK\]|\[NEW_PAGE\]/i.test(trimmed)) {
+      flushSection();
+      pendingPageBreak = true;
+      continue;
+    }
+    if (headingRe.test(trimmed) && trimmed.length < 100) {
+      flushSection();
+      currentTitle = trimmed;
+    } else if (trimmed === "") {
+      flushBuffer();
+    } else {
+      buffer = buffer ? buffer + " " + trimmed : trimmed;
+    }
+  }
+  flushSection();
+
+  if (chapters.length === 0) {
+    const allText = text.replace(/\s+/g, " ").trim();
+    const chunks = allText.match(/.{1,800}(\s|$)/g) ?? [allText];
+    return [{ title: manuscriptTitle, paragraphs: chunks.map((c) => c.trim()), kind: "generic", pageBreakBefore: false }];
+  }
+  return chapters;
+}
+
+// ── Academic/business parser ──────────────────────────────────────────────────
+
 /**
  * Parses academic/business documents that use numbered section headings
  * (e.g. "1.0 Introduction", "1.1 Background", "2.0 Literature Review").
- * Falls back to the chapter parser when no numbered headings are found.
+ * Falls back to parseTxtToChapters when no numbered headings are found.
  */
 function parseAcademicSections(text: string, title: string): Chapter[] {
   if (!text.trim()) {
     return [
-      { title: "1.0 Introduction", paragraphs: SAMPLE_PARAGRAPHS.slice(0, 3) },
-      { title: "2.0 Main Content", paragraphs: SAMPLE_PARAGRAPHS.slice(2) },
+      { title: "1.0 Introduction", paragraphs: SAMPLE_PARAGRAPHS.slice(0, 3), kind: "introduction", pageBreakBefore: false },
+      { title: "2.0 Main Content", paragraphs: SAMPLE_PARAGRAPHS.slice(2), kind: "chapter", pageBreakBefore: false },
     ];
   }
 
-  // Matches: "1.0 Title", "1.1 Background", "2.0 Methodology", "ABSTRACT", "REFERENCES"
   const sectionRegex =
     /^((\d+\.)+\d*\s+\S|abstract|references?|bibliography|acknowledgements?|appendix\s*\w*|conclusion|introduction|chapter\s+[\w]+|part\s+[\w]+)/im;
 
@@ -244,6 +475,7 @@ function parseAcademicSections(text: string, title: string): Chapter[] {
   let currentTitle = "";
   let currentParagraphs: string[] = [];
   let buffer = "";
+  let pendingPageBreak = false;
 
   const flushBuffer = () => {
     const trimmed = buffer.trim();
@@ -253,10 +485,23 @@ function parseAcademicSections(text: string, title: string): Chapter[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
+    if (/\[PAGE_BREAK\]|\[NEW_PAGE\]/i.test(trimmed)) {
+      flushBuffer();
+      if (currentTitle || currentParagraphs.length > 0) {
+        const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+        chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs, kind, pageBreakBefore: pendingPageBreak });
+      }
+      currentTitle = "";
+      currentParagraphs = [];
+      pendingPageBreak = true;
+      continue;
+    }
     if (sectionRegex.test(trimmed)) {
       flushBuffer();
       if (currentTitle || currentParagraphs.length > 0) {
-        chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs });
+        const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+        chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs, kind, pageBreakBefore: pendingPageBreak });
+        pendingPageBreak = false;
       }
       currentTitle = trimmed;
       currentParagraphs = [];
@@ -268,84 +513,41 @@ function parseAcademicSections(text: string, title: string): Chapter[] {
   }
   flushBuffer();
   if (currentTitle || currentParagraphs.length > 0) {
-    chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs });
+    const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+    chapters.push({ title: currentTitle || title, paragraphs: currentParagraphs, kind, pageBreakBefore: pendingPageBreak });
   }
 
-  if (chapters.length === 0) {
-    return parseChapters(text, title);
-  }
-
+  if (chapters.length === 0) return parseTxtToChapters(text, title);
   return chapters;
 }
 
-function parseChapters(text: string, title: string): Chapter[] {
-  if (!text.trim()) {
-    return [
-      {
-        title: "Chapter One",
-        paragraphs: SAMPLE_PARAGRAPHS,
-      },
-      {
-        title: "Chapter Two",
-        paragraphs: [
-          ...SAMPLE_PARAGRAPHS.slice(2),
-          SAMPLE_PARAGRAPHS[0],
-          SAMPLE_PARAGRAPHS[1],
-        ],
-      },
-    ];
-  }
+// ── Main dispatcher ───────────────────────────────────────────────────────────
 
-  const chapterRegex =
-    /^(chapter\s+[\w]+|part\s+[\w]+|section\s+[\w]+|prologue|epilogue|introduction|preface|foreword|afterword)[\s:—]*/im;
+async function parseManuscriptToChapters(
+  buffer: Buffer,
+  filename: string,
+  manuscriptTitle: string,
+  suite: "publishing" | "academic" | "business" | "letters",
+): Promise<Chapter[]> {
+  const ext = (filename ?? "").toLowerCase().split(".").pop();
 
-  const lines = text.split(/\r?\n/);
-  const chapters: Chapter[] = [];
-  let currentTitle = "";
-  let currentParagraphs: string[] = [];
-  let buffer = "";
+  if (ext === "pdf") return parsePdfToChapters(buffer, manuscriptTitle);
 
-  const flushBuffer = () => {
-    const trimmed = buffer.trim();
-    if (trimmed) currentParagraphs.push(trimmed);
-    buffer = "";
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (chapterRegex.test(trimmed)) {
-      flushBuffer();
-      if (currentTitle || currentParagraphs.length > 0) {
-        chapters.push({
-          title: currentTitle || title,
-          paragraphs: currentParagraphs,
-        });
-      }
-      currentTitle = trimmed;
-      currentParagraphs = [];
-    } else if (trimmed === "") {
-      flushBuffer();
-    } else {
-      buffer = buffer ? buffer + " " + trimmed : trimmed;
+  if (ext === "docx") {
+    const chapters = await parseDocxToChapters(buffer, manuscriptTitle);
+    // For academic/business, re-run academic parser if the DOCX has no headings
+    if ((suite === "academic" || suite === "business") && chapters.length <= 1 && !chapters[0]?.title) {
+      const { value: raw } = await mammoth.extractRawText({ buffer });
+      return parseAcademicSections(raw, manuscriptTitle);
     }
+    return chapters;
   }
 
-  flushBuffer();
-  if (currentTitle || currentParagraphs.length > 0) {
-    chapters.push({
-      title: currentTitle || title,
-      paragraphs: currentParagraphs,
-    });
-  }
-
-  if (chapters.length === 0) {
-    const allText = text.replace(/\s+/g, " ").trim();
-    const chunks = allText.match(/.{1,800}(\s|$)/g) ?? [allText];
-    return [{ title: title, paragraphs: chunks.map((c) => c.trim()) }];
-  }
-
-  return chapters;
+  // TXT (and anything else)
+  const text = buffer.toString("utf-8");
+  return suite === "academic" || suite === "business"
+    ? parseAcademicSections(text, manuscriptTitle)
+    : parseTxtToChapters(text, manuscriptTitle);
 }
 
 function resolvePdfFont(fontFamily: string | null): string {
@@ -508,14 +710,14 @@ async function generatePdfBuffer(
   }
 
   // ── Body chapters ────────────────────────────────────────────
-  bodyChapters.forEach((chapter, idx) => {
+  let chapterCounter = 0;
+  bodyChapters.forEach((chapter) => {
     doc.addPage();
 
-    // Use the detected chapter heading as-is; only generate a label when
-    // the chapter was extracted without a heading (e.g. plain-text files).
-    const label = isChapterHeading(chapter.title)
-      ? chapter.title
-      : chapterLabel(idx, job.chapterNumberStyle);
+    // Named sections (Dedication, Copyright, etc.) use their own title.
+    // Body chapters use the detected heading or generate "Chapter N".
+    if (chapter.kind === "chapter" || chapter.kind === "bonus_chapter" || chapter.kind === "generic") chapterCounter++;
+    const label = sectionLabel(chapter, chapterCounter - 1, job.chapterNumberStyle);
 
     doc.moveDown(4);
     doc
@@ -678,12 +880,12 @@ async function generateDocxBuffer(
 
   sectionChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
-  // Body chapters — use detected heading as-is; only generate a label when
-  // no chapter heading was present in the source text.
+  // Body chapters — named sections (Dedication, Copyright, etc.) use their own
+  // title; plain chapters use the detected heading or a generated "Chapter N".
+  let docxChapterCounter = 0;
   bodyChapters.forEach((chapter, idx) => {
-    const label = isChapterHeading(chapter.title)
-      ? chapter.title
-      : chapterLabel(idx, job.chapterNumberStyle);
+    if (chapter.kind === "chapter" || chapter.kind === "bonus_chapter" || chapter.kind === "generic") docxChapterCounter++;
+    const label = sectionLabel(chapter, docxChapterCounter - 1, job.chapterNumberStyle);
 
     sectionChildren.push(
       new Paragraph({
@@ -807,6 +1009,32 @@ function buildPreviewHtml(
 
   const { bookTitle, subLines, bodyChapters } = extractTitlePage(chapters);
 
+  // ── Table of Contents ──────────────────────────────────────────────────────
+  const namedFront = chapters.filter((ch) =>
+    ["cover", "title_page", "copyright", "disclaimer", "reader_notice", "dedication", "foreword", "preface"].includes(ch.kind),
+  );
+
+  let chapterIdx = 0;
+  const tocRows = [...namedFront, ...bodyChapters].map((ch) => {
+    const isCh = ch.kind === "chapter" || ch.kind === "bonus_chapter" || ch.kind === "generic";
+    if (isCh) chapterIdx++;
+    const label = isCh
+      ? sectionLabel(ch, chapterIdx - 1, job.chapterNumberStyle)
+      : ch.title || SECTION_KIND_LABELS[ch.kind] || "Untitled";
+    const kindTag = SECTION_KIND_LABELS[ch.kind] || "";
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.25em 0;border-bottom:1px dotted #eee;font-size:${fontSize - 1}px">
+      <span style="font-family:${font},serif">${label}</span>
+      ${kindTag && !isCh ? `<span style="color:#bbb;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">${kindTag}</span>` : ""}
+    </div>`;
+  });
+
+  const tocHtml = tocRows.length > 1
+    ? `<div style="border:1px solid #eee;border-radius:6px;padding:1em 1.25em;margin:1.5em 0 2em;background:#fafafa">
+        <p style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#bbb;margin:0 0 0.6em">Table of Contents</p>
+        ${tocRows.join("")}
+      </div>`
+    : "";
+
   const subLinesHtml = subLines
     .map(
       (p) =>
@@ -818,23 +1046,30 @@ function buildPreviewHtml(
     ? `<h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em;font-weight:bold">${bookTitle}</h1>${subLinesHtml}`
     : subLinesHtml;
 
+  let previewChapterIdx = 0;
   const chaptersHtml = bodyChapters
     .slice(0, 2)
     .map(
-      (ch, idx) => `
+      (ch) => {
+        const isCh = ch.kind === "chapter" || ch.kind === "bonus_chapter" || ch.kind === "generic";
+        if (isCh) previewChapterIdx++;
+        const label = sectionLabel(ch, previewChapterIdx - 1, job.chapterNumberStyle);
+        return `
     <div style="margin-bottom:2em">
       <h2 style="text-align:center;font-family:${font},serif;font-size:${chapterHeadingSize}px;margin-bottom:0.4em;font-weight:bold">
-        ${isChapterHeading(ch.title) ? ch.title : chapterLabel(idx, job.chapterNumberStyle)}
+        ${label}
       </h2>
       ${chapterDivider}
       ${ch.paragraphs
+        .filter((p) => p.trim())
         .slice(0, 4)
         .map(
           (p) =>
             `<p style="text-indent:1.5em;margin:0 0 0.75em;text-align:justify;font-family:${font},serif;font-size:${fontSize}px;line-height:${lineHeight}">${p.trim()}</p>`,
         )
         .join("")}
-    </div>`,
+    </div>`;
+      },
     )
     .join('<div style="border:none;border-top:1px solid #eee;margin:2em 0"></div>');
 
@@ -843,11 +1078,17 @@ function buildPreviewHtml(
       ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:2em 0 0">Formatted with Etscript</p>`
       : "";
 
+  const totalSections = chapters.length;
+  const moreLabel = totalSections > 2
+    ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${totalSections - 2} more section(s) in the downloaded files</p>`
+    : "";
+
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">
   ${titleBlockHtml}
-  <div style="margin-top:3em">${chaptersHtml}</div>
-  ${bodyChapters.length > 2 ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${bodyChapters.length - 2} more chapter(s) in the downloaded files</p>` : ""}
+  ${tocHtml}
+  <div style="margin-top:1em">${chaptersHtml}</div>
+  ${moreLabel}
   ${brandingHtml}
 </div>`;
 }
@@ -1176,50 +1417,38 @@ function buildLetterPreviewHtml(letter: LetterContent, job: JobOptions): string 
 
 /** Parse TipTap-generated HTML back into chapters. */
 function parseHtmlToChapters(html: string): Chapter[] {
-  const decode = (s: string): string =>
-    s
-      .replace(/<[^>]+>/g, "")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, " ")
-      .trim();
-
-  const tokenRe = /<(h1|h2|h3|p)(?:\s[^>]*)?>([^]*?)<\/\1>/gi;
-  const tokens: Array<{ tag: string; text: string }> = [];
-  let m: RegExpExecArray | null;
-  while ((m = tokenRe.exec(html)) !== null) {
-    const text = decode(m[2]);
-    if (text) tokens.push({ tag: m[1].toLowerCase(), text });
-  }
+  const tokens = tokenizeHtml(html);
+  if (tokens.length === 0) return [];
 
   const chapters: Chapter[] = [];
   let currentTitle = "";
   let currentParagraphs: string[] = [];
 
+  const flush = () => {
+    if (currentTitle || currentParagraphs.some((p) => p.trim())) {
+      const kind = classifySection(currentTitle, chapters.length, currentParagraphs);
+      chapters.push({ title: currentTitle, paragraphs: currentParagraphs, kind, pageBreakBefore: false });
+    }
+    currentTitle = "";
+    currentParagraphs = [];
+  };
+
   for (const token of tokens) {
-    if (token.tag === "h1") {
-      if (currentParagraphs.length > 0 || currentTitle) {
-        chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
+    if (token.kind === "page_break") {
+      flush();
+    } else if (token.kind === "heading") {
+      if (token.level === 1) {
+        flush();
+        currentParagraphs = [token.text]; // h1 is title-page content; treat as paragraph
+      } else {
+        flush();
+        currentTitle = token.text;
       }
-      currentTitle = "";
-      currentParagraphs = [token.text];
-    } else if (token.tag === "h2" || token.tag === "h3") {
-      if (currentParagraphs.length > 0 || currentTitle) {
-        chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
-      }
-      currentTitle = token.text;
-      currentParagraphs = [];
     } else {
       currentParagraphs.push(token.text);
     }
   }
-
-  if (currentTitle || currentParagraphs.length > 0) {
-    chapters.push({ title: currentTitle, paragraphs: currentParagraphs });
-  }
+  flush();
 
   return chapters;
 }
@@ -1271,21 +1500,17 @@ export async function generateFormattedFiles(
       .join(" ")
       .split(/\s+/)
       .filter(Boolean).length;
-  } else {
-    let rawText = "";
-    if (manuscript.fileKey && manuscript.originalFilename) {
-      try {
-        const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-        rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
-      } catch (err) {
-        if (!(err instanceof MissingUploadError)) throw err;
-      }
+  } else if (manuscript.fileKey && manuscript.originalFilename) {
+    try {
+      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
+      wordCount = chapters.flatMap((c) => c.paragraphs).join(" ").split(/\s+/).filter(Boolean).length;
+    } catch (err) {
+      if (!(err instanceof MissingUploadError)) throw err;
+      chapters = parseTxtToChapters("", manuscript.title);
     }
-    wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
-    chapters =
-      suite === "academic" || suite === "business"
-        ? parseAcademicSections(rawText, manuscript.title)
-        : parseChapters(rawText, manuscript.title);
+  } else {
+    chapters = parseTxtToChapters("", manuscript.title);
   }
 
   const previewHtml = buildPreviewHtml(manuscript, chapters, job);
@@ -1324,16 +1549,11 @@ export async function generateDocumentBuffer(
 
   if (job.editedContent) {
     chapters = parseHtmlToChapters(job.editedContent);
+  } else if (manuscript.fileKey && manuscript.originalFilename) {
+    const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
+    chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
   } else {
-    let rawText = "";
-    if (manuscript.fileKey) {
-      const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename ?? "");
-    }
-    chapters =
-      suite === "academic" || suite === "business"
-        ? parseAcademicSections(rawText, manuscript.title)
-        : parseChapters(rawText, manuscript.title);
+    chapters = parseTxtToChapters("", manuscript.title);
   }
 
   return format === "pdf"
@@ -1388,18 +1608,24 @@ export async function generateEditorContent(
     return { html: "<p></p>", wordCount: 0 };
   }
 
-  let rawText = "";
+  let chapters: Chapter[] = parseTxtToChapters("", manuscript.title);
+  let wordCount = 0;
+
   if (manuscript.fileKey && manuscript.originalFilename) {
     try {
       const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-      rawText = await extractTextFromBuffer(fileBuffer, manuscript.originalFilename);
+      // Default to publishing suite for the editor; the job bookType can refine it
+      const suite =
+        job && (getDocumentSuite(job.bookType) === "academic" || getDocumentSuite(job.bookType) === "business")
+          ? (getDocumentSuite(job.bookType) as "academic" | "business")
+          : "publishing";
+      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
+      wordCount = chapters.flatMap((c) => c.paragraphs).join(" ").split(/\s+/).filter(Boolean).length;
     } catch (err) {
       if (!(err instanceof MissingUploadError)) throw err;
     }
   }
 
-  const wordCount = rawText ? rawText.split(/\s+/).filter(Boolean).length : 0;
-  const chapters = parseChapters(rawText, manuscript.title);
   const titlePage = extractTitlePage(chapters);
   const html = buildEditorHtml(titlePage);
 
