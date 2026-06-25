@@ -192,7 +192,7 @@ export default function UploadPage() {
         setFile(droppedFile);
         if (!title) setTitle(droppedFile.name.replace(/\.[^/.]+$/, ""));
       } else {
-        toast({ title: "Invalid file type", description: "Please upload a .docx or .txt file", variant: "destructive" });
+        toast({ title: "Invalid file type", description: "Please upload a .docx, .txt, or .pdf file", variant: "destructive" });
       }
     }
   };
@@ -207,7 +207,7 @@ export default function UploadPage() {
     }
   };
 
-  const isValidFile = (f: File) => f.name.endsWith(".docx") || f.name.endsWith(".txt");
+  const isValidFile = (f: File) => f.name.endsWith(".docx") || f.name.endsWith(".txt") || f.name.endsWith(".pdf");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,7 +289,7 @@ export default function UploadPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">Upload Manuscript</CardTitle>
-            <CardDescription>We accept Microsoft Word (.docx) and plain text (.txt) files up to 50 MB.</CardDescription>
+            <CardDescription>We accept Microsoft Word (.docx), plain text (.txt), and PDF (.pdf) files up to 50 MB.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -334,9 +334,9 @@ export default function UploadPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">Drag and drop your file here, or</p>
-                        <p className="text-xs text-muted-foreground mt-1">DOCX or TXT files up to 50 MB</p>
+                        <p className="text-xs text-muted-foreground mt-1">DOCX, TXT, or PDF files up to 50 MB</p>
                       </div>
-                      <Input id="file" type="file" accept=".docx,.txt" className="hidden" onChange={handleFileChange} />
+                      <Input id="file" type="file" accept=".docx,.txt,.pdf" className="hidden" onChange={handleFileChange} />
                       <Label
                         htmlFor="file"
                         className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"

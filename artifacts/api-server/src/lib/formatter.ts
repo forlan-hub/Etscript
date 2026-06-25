@@ -13,7 +13,10 @@ import {
   PageBreak,
 } from "docx";
 import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
+import { createRequire } from "module";
+const _require = createRequire(import.meta.url);
+type PdfParseResult = { text: string; numpages: number };
+const pdfParse = _require("pdf-parse") as (buffer: Buffer, opts?: unknown) => Promise<PdfParseResult>;
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 type JobOptions = {
