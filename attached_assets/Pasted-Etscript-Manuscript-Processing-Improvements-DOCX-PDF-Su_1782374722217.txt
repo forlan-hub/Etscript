@@ -1,0 +1,351 @@
+Etscript Manuscript Processing Improvements (DOCX + PDF Support)
+Root Cause Analysis
+The current engine appears to be treating uploaded manuscripts as plain text after extraction.
+
+This causes loss of:
+
+spacing
+
+page breaks
+
+front matter
+
+heading hierarchy
+
+TOC structure
+
+pagination integrity
+
+The parser should preserve document structure before formatting begins.
+
+DOCX Processing Requirements
+When importing DOCX files, preserve:
+
+Paragraph Structure
+Capture:
+
+XML
+
+<w:p>
+elements as independent paragraphs.
+
+Do NOT collapse consecutive paragraph tags into a single block.
+
+Blank Paragraphs
+Authors intentionally use blank lines for:
+
+chapter separation
+
+disclaimers
+
+dedication pages
+
+dramatic pauses
+
+scene transitions
+
+Current behavior removes them.
+
+Expected behavior:
+
+
+Paragraph 1
+
+
+Paragraph 2
+must remain:
+
+
+Paragraph 1
+
+
+Paragraph 2
+Page Break Preservation
+Detect:
+
+XML
+
+<w:br w:type="page"/>
+and
+
+XML
+
+<w:lastRenderedPageBreak/>
+These should be converted into:
+
+JSON
+
+{
+  "type":"page_break"
+}
+within the manuscript model.
+
+Heading Recognition
+DOCX styles should map automatically:
+
+DOCX Style	Etscript
+Title	Title Page
+Heading 1	Chapter
+Heading 2	Section
+Heading 3	Subsection
+
+PDF Processing Requirements
+PDFs require different handling.
+
+Current Likely Problem
+Text is being extracted line-by-line.
+
+This loses:
+
+page structure
+
+spacing
+
+hierarchy
+
+and converts everything into a giant text stream.
+
+Required Behavior
+Parser should preserve:
+
+Original Page Boundaries
+Each PDF page should initially remain:
+
+JSON
+
+{
+  page:1
+}
+before reconstruction.
+
+Heading Detection
+Detect:
+
+larger font sizes
+
+centered text
+
+bold text
+
+to infer:
+
+
+TITLE PAGE
+
+COPYRIGHT PAGE
+
+DEDICATION
+
+CHAPTERS
+Front Matter Recognition
+The engine should detect standalone pages containing:
+
+
+DEDICATION
+
+DISCLAIMER
+
+COPYRIGHT
+
+READER NOTICE
+
+INTRODUCTION
+and create separate sections automatically.
+
+New Section Classification Engine
+Implement:
+
+pseudo
+
+SectionClassifier()
+that categorizes pages into:
+
+
+Cover Page
+
+Title Page
+
+Copyright Page
+
+Disclaimer
+
+Reader Notice
+
+Dedication
+
+Foreword
+
+Preface
+
+Introduction
+
+Chapter
+
+Bonus Chapter
+
+Appendix
+
+Conclusion
+
+Epilogue
+
+About Author
+Navigation / TOC Improvements
+Current TOC generation appears to be driven only by chapter recognition.
+
+Instead:
+
+pseudo
+
+BuildTOC()
+
+Include:
+FrontMatter
+BodyMatter
+BackMatter
+Expected TOC Structure:
+
+
+Cover
+
+Title Page
+
+Copyright
+
+Disclaimer
+
+Reader Notice
+
+Dedication
+
+Introduction
+
+Chapter 1
+
+Chapter 2
+
+Chapter 3
+
+...
+
+Conclusion
+
+Epilogue
+
+Bonus Chapter 1
+
+Bonus Chapter 2
+
+About the Author
+Pagination Redesign
+Current behavior suggests page numbering occurs before rendering.
+
+Recommended flow:
+
+pseudo
+
+Import
+
+Parse
+
+Format
+
+Render Pages
+
+Generate TOC
+
+Generate Page Numbers
+NOT:
+
+pseudo
+
+Import
+
+Generate Page Numbers
+
+Render
+User-Controlled Page Breaks
+Add support for:
+
+
+[PAGE_BREAK]
+and
+
+
+[NEW_PAGE]
+in both DOCX and PDF imports.
+
+When detected:
+
+JSON
+
+{
+  type:"page_break"
+}
+and force a new page.
+
+Manual Section Controls (Recommended)
+Add a dropdown in Review & Edit:
+
+
+Convert to:
+
+Cover Page
+Title Page
+Copyright Page
+Dedication
+Disclaimer
+Reader Notice
+Introduction
+Chapter
+Bonus Chapter
+Epilogue
+About Author
+Appendix
+This gives users a fallback when automatic detection fails.
+
+New Feature Request: Preserve Author Intent
+Add an import option:
+
+
+☑ Preserve Original Layout
+
+☑ Preserve Page Breaks
+
+☑ Preserve Paragraph Spacing
+
+☑ Auto Detect Book Structure
+enabled by default.
+
+This one change will eliminate most of the formatting complaints because authors care less about perfect parsing and more about preserving what they intentionally created.
+
+One more issue I noticed from your screenshots
+The editor currently appears to treat everything as a continuous document stream.
+
+I would strongly recommend that Replit redesign the manuscript data model so every section is stored as a discrete object:
+
+JSON
+
+{
+  "id":"chapter_4",
+  "type":"chapter",
+  "title":"Chapter 4",
+  "content":"..."
+}
+instead of one large text blob.
+
+That single architectural change will make:
+
+TOC generation
+
+page numbering
+
+front matter recognition
+
+export formatting
+
+navigation
+
+chapter editing
+
+far more reliable and scalable as Etscript grows into a professional publishing platform.
