@@ -392,12 +392,80 @@ async function parseDocxToChapters(buffer: Buffer, manuscriptTitle: string): Pro
   return groupTokensToChapters(tokens, manuscriptTitle);
 }
 
-// ── PDF parser: pdf-parse → text → structured sections ───────────────────────
+// ── PDF parser: pdf-parse → per-page text → structured sections ──────────────
+
+/**
+ * Join wrapped lines into proper paragraphs.
+ * Lines within a paragraph are run-on in PDF extraction; blank lines and
+ * sentence-ending punctuation signal real paragraph breaks.
+ */
+function reconstructPdfParagraphs(lines: string[]): string[] {
+  const paragraphs: string[] = [];
+  let buffer = "";
+  for (const line of lines) {
+    if (!line.trim()) {
+      if (buffer.trim()) { paragraphs.push(buffer.trim()); buffer = ""; }
+      continue;
+    }
+    if (buffer && /[.!?:]\s*$/.test(buffer)) {
+      paragraphs.push(buffer.trim());
+      buffer = line;
+    } else {
+      buffer = buffer ? buffer + " " + line : line;
+    }
+  }
+  if (buffer.trim()) paragraphs.push(buffer.trim());
+  return paragraphs;
+}
 
 async function parsePdfToChapters(buffer: Buffer, manuscriptTitle: string): Promise<Chapter[]> {
+  const headingRe =
+    /^(chapter\s+[\w]+|part\s+[\w]+|section\s+[\w]+|prologue|epilogue|introduction|preface|foreword|afterword|dedication|copyright|disclaimer|reader'?s?\s*notice|bonus\s+chapter\s*[\w]*|appendix\s*[\w]*|conclusion|about\s+the\s+author)[\s:—]*/i;
+
   try {
     const data = await pdfParse(buffer);
-    return parseTxtToChapters(data.text, manuscriptTitle);
+
+    // pdf-parse separates pages with form-feed characters (\f)
+    const pages = data.text.split("\f").map((p: string) => p.trim()).filter(Boolean);
+
+    if (pages.length === 0) return parseTxtToChapters("", manuscriptTitle);
+
+    const chapters: Chapter[] = [];
+
+    for (const pageText of pages) {
+      const rawLines = pageText.split(/\r?\n/);
+      const lines = rawLines.map((l: string) => l.trim()).filter(Boolean);
+      if (lines.length === 0) continue;
+
+      const firstLine = lines[0];
+
+      // Front-matter page: ≤5 non-empty lines whose first line looks like a
+      // known section keyword or is very short (standalone title page)
+      const isFrontMatter =
+        lines.length <= 5 && (headingRe.test(firstLine) || firstLine.length < 45);
+
+      // Page whose first line is a recognized section heading
+      const startsWithHeading = headingRe.test(firstLine) && firstLine.length < 100;
+
+      if (isFrontMatter || startsWithHeading) {
+        const title = firstLine;
+        const rest = lines.slice(1);
+        const paragraphs = reconstructPdfParagraphs(rest);
+        const kind = classifySection(title, chapters.length, paragraphs);
+        chapters.push({ title, paragraphs, kind, pageBreakBefore: chapters.length > 0 });
+      } else if (chapters.length === 0) {
+        // Content before any detected heading → treat as title page / generic
+        const paragraphs = reconstructPdfParagraphs(lines);
+        const kind = classifySection("", 0, paragraphs);
+        chapters.push({ title: "", paragraphs, kind, pageBreakBefore: false });
+      } else {
+        // Continuation page: append paragraphs to the last chapter
+        const last = chapters[chapters.length - 1];
+        last.paragraphs.push(...reconstructPdfParagraphs(lines));
+      }
+    }
+
+    return chapters.length > 0 ? chapters : parseTxtToChapters(data.text, manuscriptTitle);
   } catch {
     return [{
       title: manuscriptTitle,
@@ -769,7 +837,11 @@ async function generatePdfBuffer(
     doc.font(bodyFont).fontSize(fontSize);
 
     for (const para of chapter.paragraphs) {
-      if (!para.trim()) continue;
+      if (!para.trim()) {
+        // Preserve intentional blank line as a visual gap
+        doc.moveDown(0.8);
+        continue;
+      }
       doc.text(para.trim(), {
         align: "justify",
         lineGap,
@@ -928,7 +1000,16 @@ async function generateDocxBuffer(
     );
 
     for (const para of chapter.paragraphs) {
-      if (!para.trim()) continue;
+      if (!para.trim()) {
+        // Preserve intentional blank line as an empty paragraph
+        sectionChildren.push(
+          new Paragraph({
+            spacing: { line: lineRule, after: 0 },
+            children: [],
+          }),
+        );
+        continue;
+      }
       sectionChildren.push(
         new Paragraph({
           alignment: bodyAlignment,
