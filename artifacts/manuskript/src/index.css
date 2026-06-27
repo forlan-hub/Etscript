@@ -195,6 +195,7 @@
   margin-bottom: 0.65rem;
   line-height: 1.7;
   color: hsl(var(--foreground));
+  text-align: justify;
 }
 
 .etscript-editor .tiptap p.is-editor-empty:first-child::before {

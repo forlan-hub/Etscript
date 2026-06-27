@@ -303,6 +303,20 @@ function decodeHtmlEntities(s: string): string {
     .replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Many DOCX files use ALL-CAPS or plain-text paragraph styles for section
+ * titles instead of proper Word heading styles. This detects those so the
+ * tokeniser can promote them to headings — matching the same pattern used
+ * by parseTxtToChapters.
+ */
+const SECTION_HEADING_RE =
+  /^(chapter\s+[\w]+|part\s+[\w]+|section\s+[\w]+|prologue|epilogue|introduction|preface|foreword|afterword|dedication|copyright|disclaimer|reader'?s?\s*notice|bonus\s+chapter\s*[\w]*|appendix\s*[\w]*|conclusion|about\s+the\s+author)[\s:—]*/i;
+
+function looksLikeSectionHeading(text: string): boolean {
+  if (!text || text.length > 80) return false;
+  return SECTION_HEADING_RE.test(text);
+}
+
 function tokenizeHtml(html: string): HtmlToken[] {
   const tokens: HtmlToken[] = [];
   const re = /<(h[123]|p|hr)(?:\s[^>]*)?>([^]*?)<\/\1>|<hr\s*\/?>/gi;
@@ -319,9 +333,12 @@ function tokenizeHtml(html: string): HtmlToken[] {
     } else if (tag === "h3") {
       if (text) tokens.push({ kind: "heading", level: 3, text });
     } else {
-      // paragraph — detect [PAGE_BREAK] / [NEW_PAGE] markers
+      // paragraph — detect [PAGE_BREAK] / [NEW_PAGE] markers or disguised headings
       if (/\[PAGE_BREAK\]|\[NEW_PAGE\]/i.test(text)) {
         tokens.push({ kind: "page_break" });
+      } else if (text && looksLikeSectionHeading(text)) {
+        // Promote ALL-CAPS / keyword-matching paragraphs to section headings
+        tokens.push({ kind: "heading", level: 2, text });
       } else {
         tokens.push({ kind: "paragraph", text });
       }
@@ -799,17 +816,25 @@ async function generatePdfBuffer(
       const pageNum = String(i - range.start);
       doc.font(bodyFont).fontSize(9).fillColor("#555");
 
+      // lineBreak: false prevents PDFKit from overflowing page-number text
+      // to a new blank page during the buffered-page loop.
       if (pageNumPos === "top_right") {
-        doc.text(pageNum, margin, margin / 2, { align: "right", width: contentWidth });
+        doc.text(pageNum, margin, margin / 2, {
+          align: "right",
+          width: contentWidth,
+          lineBreak: false,
+        });
       } else if (pageNumPos === "bottom_right") {
         doc.text(pageNum, margin, height - margin / 2 - 9, {
           align: "right",
           width: contentWidth,
+          lineBreak: false,
         });
       } else {
         doc.text(pageNum, margin, height - margin / 2 - 9, {
           align: "center",
           width: contentWidth,
+          lineBreak: false,
         });
       }
       doc.fillColor("#000");
