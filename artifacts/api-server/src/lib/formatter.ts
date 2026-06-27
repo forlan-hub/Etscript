@@ -1123,8 +1123,11 @@ function buildPreviewHtml(
     ["cover", "title_page", "copyright", "disclaimer", "reader_notice", "dedication", "foreword", "preface"].includes(ch.kind),
   );
 
+  // All TOC-visible sections in order, with stable anchor IDs
+  const allTocSections = [...namedFront, ...bodyChapters];
   let chapterIdx = 0;
-  const tocRows = [...namedFront, ...bodyChapters].map((ch) => {
+  const tocRows = allTocSections.map((ch, globalIdx) => {
+    const anchorId = `etscript-s${globalIdx}`;
     const isCh = ch.kind === "chapter" || ch.kind === "bonus_chapter" || ch.kind === "generic";
     if (isCh) chapterIdx++;
     const label = isCh
@@ -1132,7 +1135,7 @@ function buildPreviewHtml(
       : ch.title || SECTION_KIND_LABELS[ch.kind] || "Untitled";
     const kindTag = SECTION_KIND_LABELS[ch.kind] || "";
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.25em 0;border-bottom:1px dotted #eee;font-size:${fontSize - 1}px">
-      <span style="font-family:${font},serif">${label}</span>
+      <a href="#${anchorId}" style="text-decoration:none;color:inherit;flex:1;font-family:${font},serif">${label}</a>
       ${kindTag && !isCh ? `<span style="color:#bbb;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">${kindTag}</span>` : ""}
     </div>`;
   });
@@ -1155,16 +1158,34 @@ function buildPreviewHtml(
     ? `<h1 style="text-align:center;font-family:${font},serif;font-size:${fontSize + 10}px;margin-bottom:0.25em;font-weight:bold">${bookTitle}</h1>${subLinesHtml}`
     : subLinesHtml;
 
+  // Front matter sections rendered in preview (all of them — they're usually short)
+  const frontMatterHtml = namedFront.map((ch, idx) => {
+    const anchorId = `etscript-s${idx}`;
+    const label = ch.title || SECTION_KIND_LABELS[ch.kind] || "Untitled";
+    const paras = ch.paragraphs.filter((p) => p.trim()).slice(0, 6);
+    return `
+    <div id="${anchorId}" style="margin-bottom:2em;border-top:1px solid #eee;padding-top:2em">
+      <h2 style="text-align:center;font-family:${font},serif;font-size:${chapterHeadingSize}px;margin-bottom:0.8em;font-weight:bold;color:#333">
+        ${label}
+      </h2>
+      ${paras.map((p) =>
+        `<p style="margin:0 0 0.75em;text-align:justify;font-family:${font},serif;font-size:${fontSize}px;line-height:${lineHeight}">${p.trim()}</p>`
+      ).join("")}
+    </div>`;
+  }).join("");
+
+  // Body chapters (first 2 shown with content)
   let previewChapterIdx = 0;
   const chaptersHtml = bodyChapters
     .slice(0, 2)
-    .map(
-      (ch) => {
+    .map((ch, idx) => {
+        const globalIdx = namedFront.length + idx;
+        const anchorId = `etscript-s${globalIdx}`;
         const isCh = ch.kind === "chapter" || ch.kind === "bonus_chapter" || ch.kind === "generic";
         if (isCh) previewChapterIdx++;
         const label = sectionLabel(ch, previewChapterIdx - 1, job.chapterNumberStyle);
         return `
-    <div style="margin-bottom:2em">
+    <div id="${anchorId}" style="margin-bottom:2em">
       <h2 style="text-align:center;font-family:${font},serif;font-size:${chapterHeadingSize}px;margin-bottom:0.4em;font-weight:bold">
         ${label}
       </h2>
@@ -1178,8 +1199,7 @@ function buildPreviewHtml(
         )
         .join("")}
     </div>`;
-      },
-    )
+      })
     .join('<div style="border:none;border-top:1px solid #eee;margin:2em 0"></div>');
 
   const brandingHtml =
@@ -1187,15 +1207,17 @@ function buildPreviewHtml(
       ? `<p style="text-align:center;color:#ccc;font-size:10px;margin:2em 0 0">Formatted with Etscript</p>`
       : "";
 
-  const totalSections = chapters.length;
-  const moreLabel = totalSections > 2
-    ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${totalSections - 2} more section(s) in the downloaded files</p>`
+  // "More sections" counts body chapters beyond the 2 shown in preview
+  const hiddenBodyCount = Math.max(0, bodyChapters.length - 2);
+  const moreLabel = hiddenBodyCount > 0
+    ? `<p style="text-align:center;color:#999;font-size:11px;margin-top:2em">+ ${hiddenBodyCount} more chapter(s) in the downloaded files</p>`
     : "";
 
   return `
 <div style="max-width:520px;margin:0 auto;padding:2em">
   ${titleBlockHtml}
   ${tocHtml}
+  ${frontMatterHtml}
   <div style="margin-top:1em">${chaptersHtml}</div>
   ${moreLabel}
   ${brandingHtml}
