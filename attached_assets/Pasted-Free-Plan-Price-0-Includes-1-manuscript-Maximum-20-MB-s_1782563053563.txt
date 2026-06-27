@@ -1,0 +1,117 @@
+Free Plan
+Price: ₦0
+
+Includes:
+
+1 manuscript
+
+Maximum 20 MB storage
+
+Basic templates
+
+Watermarked PDF export
+
+Template preview and comparison
+
+Pay-Per-Export
+Price: ₦2,500 per export
+
+Includes:
+
+Up to 3 manuscripts
+
+Maximum 100 MB storage
+
+One watermark-free export
+
+PDF and DOCX export
+
+Available even if a Premium subscription has expired
+
+Premium Monthly
+Price: ₦5,000/month
+
+Includes:
+
+50 manuscripts
+
+5 GB storage
+
+Unlimited exports
+
+Academic Suite
+
+Citation & Reference Engine
+
+ISBN Preparation Tool
+
+Business Suite
+
+Professional Letter Suite
+
+Premium templates
+
+Custom Template Builder (up to 20 saved templates)
+
+Watermark-free exports
+
+Premium Quarterly
+Price: ₦12,000 every 3 months
+
+Includes:
+
+Everything in Premium Monthly
+
+Approximately 20% savings compared to paying monthly
+
+Premium Annual
+Price: ₦36,000/year
+
+Includes:
+
+Everything in Premium Monthly
+
+Approximately 40% savings compared to paying monthly
+
+Priority support (optional, if you choose to offer it)
+
+Founder's Lifetime (Limited Offer)
+Price: ₦100,000
+
+Availability:
+
+Limited to early adopters or a fixed number of customers (e.g., first 100 or first 250 users)
+
+Clearly communicate that this offer will not be available indefinitely
+
+Includes:
+
+Lifetime access to all features available at the time of purchase
+
+Future major modules or enterprise features may be excluded unless explicitly stated
+
+I recommend making it clear that the Founder's Lifetime plan is a launch promotion, not a permanent pricing tier. This protects the long-term sustainability of the business.
+
+Additional Instructions for Replit
+Ask Replit to build a dynamic subscription management system rather than hard-coding plans.
+
+The admin dashboard should allow you to:
+
+Create new plans
+
+Edit pricing
+
+Archive old plans
+
+Add promotional discounts
+
+Create coupon codes
+
+Schedule promotional campaigns
+
+Enable or disable plans without code changes
+
+Configure feature access per plan (rather than embedding logic in the application)
+
+This gives you complete control over your pricing strategy as Etscript evolves.
+
