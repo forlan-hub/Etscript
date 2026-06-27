@@ -1,4 +1,9 @@
-export type PaymentType = "payg_export" | "premium_subscription";
+export type PaymentType =
+  | "payg_export"
+  | "premium_subscription"
+  | "premium_quarterly"
+  | "premium_annual"
+  | "lifetime_access";
 
 export type NormalizedStatus = "success" | "pending" | "failed";
 

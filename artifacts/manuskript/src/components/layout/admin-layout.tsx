@@ -1,6 +1,6 @@
 import { FC, ReactNode } from "react";
 import { Link, useLocation, Redirect } from "wouter";
-import { BarChart2, Users, CreditCard, Activity, ArrowLeft, ShieldAlert } from "lucide-react";
+import { BarChart2, Users, CreditCard, Activity, ArrowLeft, ShieldAlert, Layers } from "lucide-react";
 import { useGetAdminCheck } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ const NAV = [
   { name: "Users", href: "/admin/users", icon: Users, exact: false },
   { name: "Transactions", href: "/admin/transactions", icon: CreditCard, exact: false },
   { name: "Activity", href: "/admin/activity", icon: Activity, exact: false },
+  { name: "Plans", href: "/admin/plans", icon: Layers, exact: false },
 ];
 
 interface AdminLayoutProps {

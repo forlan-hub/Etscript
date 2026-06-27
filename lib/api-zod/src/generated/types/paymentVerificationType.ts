@@ -12,4 +12,7 @@ export type PaymentVerificationType = typeof PaymentVerificationType[keyof typeo
 export const PaymentVerificationType = {
   payg_export: 'payg_export',
   premium_subscription: 'premium_subscription',
+  premium_quarterly: 'premium_quarterly',
+  premium_annual: 'premium_annual',
+  lifetime_access: 'lifetime_access',
 } as const;

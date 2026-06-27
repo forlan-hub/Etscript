@@ -8,8 +8,10 @@ import {
   subscriptionsTable,
   transactionsTable,
   activityLogTable,
+  plansTable,
+  insertPlanSchema,
 } from "@workspace/db";
-import { eq, desc, count, sum, and, sql, gte } from "drizzle-orm";
+import { eq, desc, count, sum, and, sql, gte, asc } from "drizzle-orm";
 
 const router = Router();
 
@@ -186,6 +188,74 @@ router.get("/admin/activity", requireAdmin, async (_req, res): Promise<void> => 
     .orderBy(desc(activityLogTable.createdAt))
     .limit(60);
   res.json(rows);
+});
+
+// ---------------------------------------------------------------------------
+// Plans CRUD (admin)
+// ---------------------------------------------------------------------------
+
+// GET /admin/plans — all plans including inactive
+router.get("/admin/plans", requireAdmin, async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(plansTable)
+    .orderBy(asc(plansTable.sortOrder), asc(plansTable.id));
+  res.json(rows);
+});
+
+// POST /admin/plans — create a new plan
+router.post("/admin/plans", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = insertPlanSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const [row] = await db.insert(plansTable).values(parsed.data).returning();
+  res.status(201).json(row);
+});
+
+const updatePlanSchema = insertPlanSchema.partial();
+
+// PATCH /admin/plans/:planId — update a plan
+router.patch("/admin/plans/:planId", requireAdmin, async (req, res): Promise<void> => {
+  const planId = Number(req.params.planId);
+  if (!Number.isInteger(planId) || planId <= 0) {
+    res.status(400).json({ error: "Invalid planId" });
+    return;
+  }
+  const parsed = updatePlanSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const [row] = await db
+    .update(plansTable)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(eq(plansTable.id, planId))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Plan not found" });
+    return;
+  }
+  res.json(row);
+});
+
+// DELETE /admin/plans/:planId — delete a plan
+router.delete("/admin/plans/:planId", requireAdmin, async (req, res): Promise<void> => {
+  const planId = Number(req.params.planId);
+  if (!Number.isInteger(planId) || planId <= 0) {
+    res.status(400).json({ error: "Invalid planId" });
+    return;
+  }
+  const [row] = await db
+    .delete(plansTable)
+    .where(eq(plansTable.id, planId))
+    .returning({ id: plansTable.id });
+  if (!row) {
+    res.status(404).json({ error: "Plan not found" });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 export default router;

@@ -364,7 +364,7 @@ export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem
  * @summary Initialize a payment and get a checkout URL
  */
 export const CreateCheckoutBody = zod.object({
-  "type": zod.enum(['payg_export', 'premium_subscription']),
+  "type": zod.enum(['payg_export', 'premium_subscription', 'premium_quarterly', 'premium_annual', 'lifetime_access']),
   "jobId": zod.number().nullish()
 })
 
@@ -383,7 +383,7 @@ export const VerifyPaymentQueryParams = zod.object({
 
 export const VerifyPaymentResponse = zod.object({
   "status": zod.enum(['success', 'pending', 'failed']),
-  "type": zod.enum(['payg_export', 'premium_subscription']),
+  "type": zod.enum(['payg_export', 'premium_subscription', 'premium_quarterly', 'premium_annual', 'lifetime_access']),
   "jobId": zod.number().nullish()
 })
 
@@ -481,6 +481,118 @@ export const GetAdminActivityResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetAdminActivityResponse = zod.array(GetAdminActivityResponseItem)
+
+
+/**
+ * @summary List all plans (including inactive)
+ */
+export const GetAdminPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "priceKobo": zod.number(),
+  "billingPeriod": zod.string(),
+  "isActive": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "maxManuscripts": zod.number(),
+  "maxStorageMb": zod.number(),
+  "features": zod.array(zod.string()),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const GetAdminPlansResponse = zod.array(GetAdminPlansResponseItem)
+
+
+/**
+ * @summary Create a new plan
+ */
+export const CreateAdminPlanBody = zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "priceKobo": zod.number(),
+  "billingPeriod": zod.string(),
+  "isActive": zod.boolean().optional(),
+  "isFeatured": zod.boolean().optional(),
+  "maxManuscripts": zod.number(),
+  "maxStorageMb": zod.number(),
+  "features": zod.array(zod.string()).optional(),
+  "sortOrder": zod.number().optional()
+})
+
+
+/**
+ * @summary Update a plan
+ */
+export const UpdateAdminPlanParams = zod.object({
+  "planId": zod.coerce.number()
+})
+
+export const UpdateAdminPlanBody = zod.object({
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "priceKobo": zod.number().optional(),
+  "billingPeriod": zod.string().optional(),
+  "isActive": zod.boolean().optional(),
+  "isFeatured": zod.boolean().optional(),
+  "maxManuscripts": zod.number().optional(),
+  "maxStorageMb": zod.number().optional(),
+  "features": zod.array(zod.string()).optional(),
+  "sortOrder": zod.number().optional()
+})
+
+export const UpdateAdminPlanResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "priceKobo": zod.number(),
+  "billingPeriod": zod.string(),
+  "isActive": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "maxManuscripts": zod.number(),
+  "maxStorageMb": zod.number(),
+  "features": zod.array(zod.string()),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a plan
+ */
+export const DeleteAdminPlanParams = zod.object({
+  "planId": zod.coerce.number()
+})
+
+export const DeleteAdminPlanResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary List active public plans
+ */
+export const ListPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "priceKobo": zod.number(),
+  "billingPeriod": zod.string(),
+  "isActive": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "maxManuscripts": zod.number(),
+  "maxStorageMb": zod.number(),
+  "features": zod.array(zod.string()),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListPlansResponse = zod.array(ListPlansResponseItem)
 
 
 /**

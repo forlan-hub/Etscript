@@ -12,4 +12,7 @@ export type PaymentCheckoutInputType = typeof PaymentCheckoutInputType[keyof typ
 export const PaymentCheckoutInputType = {
   payg_export: 'payg_export',
   premium_subscription: 'premium_subscription',
+  premium_quarterly: 'premium_quarterly',
+  premium_annual: 'premium_annual',
+  lifetime_access: 'lifetime_access',
 } as const;

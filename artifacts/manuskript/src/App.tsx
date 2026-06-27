@@ -28,6 +28,7 @@ import AdminDashboardPage from "./pages/admin/index";
 import AdminUsersPage from "./pages/admin/users";
 import AdminTransactionsPage from "./pages/admin/transactions";
 import AdminActivityPage from "./pages/admin/activity";
+import AdminPlansPage from "./pages/admin/plans";
 import PrivacyPolicyPage from "./pages/legal-privacy";
 import TermsOfUsePage from "./pages/legal-terms";
 import CookieNoticePage from "./pages/legal-cookies";
@@ -103,6 +104,7 @@ function AppRoutes() {
       <Route path="/admin/users" component={AdminUsersPage} />
       <Route path="/admin/transactions" component={AdminTransactionsPage} />
       <Route path="/admin/activity" component={AdminActivityPage} />
+      <Route path="/admin/plans" component={AdminPlansPage} />
       <Route path="/admin" component={AdminDashboardPage} />
       <Route path="/legal/privacy" component={PrivacyPolicyPage} />
       <Route path="/legal/terms" component={TermsOfUsePage} />

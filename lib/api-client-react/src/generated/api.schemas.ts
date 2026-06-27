@@ -239,6 +239,9 @@ export type PaymentCheckoutInputType = typeof PaymentCheckoutInputType[keyof typ
 export const PaymentCheckoutInputType = {
   payg_export: 'payg_export',
   premium_subscription: 'premium_subscription',
+  premium_quarterly: 'premium_quarterly',
+  premium_annual: 'premium_annual',
+  lifetime_access: 'lifetime_access',
 } as const;
 
 export interface PaymentCheckoutInput {
@@ -267,6 +270,9 @@ export type PaymentVerificationType = typeof PaymentVerificationType[keyof typeo
 export const PaymentVerificationType = {
   payg_export: 'payg_export',
   premium_subscription: 'premium_subscription',
+  premium_quarterly: 'premium_quarterly',
+  premium_annual: 'premium_annual',
+  lifetime_access: 'lifetime_access',
 } as const;
 
 export interface PaymentVerification {
@@ -460,6 +466,50 @@ export interface UserTemplateUpdate {
   citationStyle?: string;
 }
 
+export interface Plan {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  priceKobo: number;
+  billingPeriod: string;
+  isActive: boolean;
+  isFeatured: boolean;
+  maxManuscripts: number;
+  maxStorageMb: number;
+  features: string[];
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePlanInput {
+  slug: string;
+  name: string;
+  description?: string;
+  priceKobo: number;
+  billingPeriod: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  maxManuscripts: number;
+  maxStorageMb: number;
+  features?: string[];
+  sortOrder?: number;
+}
+
+export interface UpdatePlanInput {
+  name?: string;
+  description?: string;
+  priceKobo?: number;
+  billingPeriod?: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  maxManuscripts?: number;
+  maxStorageMb?: number;
+  features?: string[];
+  sortOrder?: number;
+}
+
 export interface ErrorEnvelope {
   error: string;
 }
@@ -470,5 +520,9 @@ reference: string;
 
 export type GetAdminCheck200 = {
   isAdmin: boolean;
+};
+
+export type DeleteAdminPlan200 = {
+  ok: boolean;
 };
 

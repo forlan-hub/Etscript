@@ -11,7 +11,13 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, getUserId, supabaseAdmin } from "../middlewares/supabaseAuth";
 import { sendReceipt } from "../lib/email";
-import { getProvider, amountForType, CURRENCY, PREMIUM_AMOUNT_KOBO } from "../lib/payments";
+import { getProvider, CURRENCY, PREMIUM_AMOUNT_KOBO } from "../lib/payments";
+import {
+  amountForType,
+  isSubscriptionType,
+  planTypeForPaymentType,
+  type PaymentType,
+} from "../lib/payments/config";
 import { getCleanAccess, isPremium } from "../lib/entitlements";
 import {
   getTransactionByReference,
@@ -24,8 +30,6 @@ import {
 } from "../lib/paymentService";
 
 const router: IRouter = Router();
-
-type PaymentTypeValue = "payg_export" | "premium_subscription";
 
 function getOrigin(req: Request): string {
   const origin = req.headers.origin;
@@ -57,12 +61,6 @@ function extractWebhookPlanCode(data: Record<string, unknown>): string | undefin
   return undefined;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Resolve a user's email: prefer the value from the Paystack payload (already
- *  verified by Paystack), fall back to the Supabase auth record. */
 async function resolveUserEmail(
   userId: string,
   paystackEmail?: string,
@@ -92,7 +90,7 @@ router.post("/payments/checkout", requireAuth, async (req, res): Promise<void> =
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const type = parsed.data.type as PaymentTypeValue;
+  const type = parsed.data.type as PaymentType;
   const jobId = parsed.data.jobId ?? null;
 
   const provider = getProvider();
@@ -118,17 +116,21 @@ router.post("/payments/checkout", requireAuth, async (req, res): Promise<void> =
       res.status(400).json({ error: "This export is already unlocked" });
       return;
     }
-  } else {
+  } else if (isSubscriptionType(type)) {
     if (await isPremium(userId)) {
       res.status(400).json({ error: "You already have an active Premium subscription" });
       return;
     }
-    try {
-      planCode = await provider.ensurePremiumPlan();
-    } catch (err) {
-      req.log.error({ err: String(err) }, "ensurePremiumPlan failed");
-      res.status(502).json({ error: "Payment provider unavailable" });
-      return;
+    // Only monthly subscriptions use a Paystack plan code (recurring).
+    // Quarterly, annual, and lifetime are one-time charges — no planCode.
+    if (type === "premium_subscription") {
+      try {
+        planCode = await provider.ensurePremiumPlan();
+      } catch (err) {
+        req.log.error({ err: String(err) }, "ensurePremiumPlan failed");
+        res.status(502).json({ error: "Payment provider unavailable" });
+        return;
+      }
     }
   }
 
@@ -198,7 +200,7 @@ router.get("/payments/verify", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const txnType = txn.type as PaymentTypeValue;
+  const txnType = txn.type as PaymentType;
 
   if (result.status === "success") {
     if (result.amountKobo !== txn.amount || result.currency !== txn.currency) {
@@ -212,11 +214,35 @@ router.get("/payments/verify", requireAuth, async (req, res): Promise<void> => {
       return;
     }
     await markTransactionSuccess(reference);
-    if (txnType === "premium_subscription") {
+    if (isSubscriptionType(txnType)) {
+      const planType = planTypeForPaymentType(txnType);
       await activateSubscriptionForUser(userId, {
         customerCode: result.customerCode,
         planCode: result.planCode,
+        planType,
       });
+    }
+
+    // Send receipt email
+    const receiptEmail = await resolveUserEmail(userId);
+    if (receiptEmail) {
+      let manuscriptTitle: string | null = null;
+      if (txnType === "payg_export" && txn.jobId) {
+        const [row] = await db
+          .select({ title: manuscriptsTable.title })
+          .from(formattingJobsTable)
+          .innerJoin(manuscriptsTable, eq(formattingJobsTable.manuscriptId, manuscriptsTable.id))
+          .where(eq(formattingJobsTable.id, txn.jobId));
+        manuscriptTitle = row?.title ?? null;
+      }
+      sendReceipt({
+        to: receiptEmail,
+        type: txnType as Parameters<typeof sendReceipt>[0]["type"],
+        amountKobo: txn.amount,
+        manuscriptTitle,
+      }).catch((err: unknown) =>
+        req.log.error({ err: String(err) }, "verify receipt email failed"),
+      );
     }
   } else if (result.status === "failed") {
     await markTransactionFailed(reference);
@@ -274,9 +300,6 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
       const txn = reference ? await getTransactionByReference(reference) : null;
 
       if (txn && reference) {
-        // The reference is already amount-bound at initialize; this is
-        // defense-in-depth parity with the verify path — refuse to grant when
-        // the charged amount/currency disagrees with the stored row.
         if (
           (amount !== undefined && amount !== txn.amount) ||
           (currency !== undefined && currency !== txn.currency)
@@ -287,11 +310,12 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
           );
         } else {
           await markTransactionSuccess(reference);
-          if (txn.type === "premium_subscription") {
-            await activateSubscriptionForUser(txn.userId, { customerCode, planCode });
+          const txnType = txn.type as PaymentType;
+          if (isSubscriptionType(txnType)) {
+            const planType = planTypeForPaymentType(txnType);
+            await activateSubscriptionForUser(txn.userId, { customerCode, planCode, planType });
           }
 
-          // Send receipt — resolve email from Paystack payload or Supabase
           const receiptEmail = await resolveUserEmail(txn.userId, customerEmail);
           if (receiptEmail) {
             let manuscriptTitle: string | null = null;
@@ -305,7 +329,7 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
             }
             sendReceipt({
               to: receiptEmail,
-              type: txn.type as "payg_export" | "premium_subscription",
+              type: txnType as Parameters<typeof sendReceipt>[0]["type"],
               amountKobo: txn.amount,
               manuscriptTitle,
             }).catch((err: unknown) =>
@@ -319,11 +343,8 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
         amount === PREMIUM_AMOUNT_KOBO &&
         currency === CURRENCY
       ) {
-        // Recurring renewal charge (no matching initiating transaction row);
-        // only extend when the charge matches the premium plan price.
+        // Recurring monthly renewal (no matching initiating transaction row)
         await handleRenewalByCustomer(customerCode);
-
-        // Send renewal receipt using the email from the Paystack payload
         if (customerEmail) {
           sendReceipt({
             to: customerEmail,
@@ -355,7 +376,6 @@ router.post("/payments/webhook", async (req, res): Promise<void> => {
     }
   } catch (err) {
     req.log.error({ err: String(err), event: eventType }, "webhook handler error");
-    // Acknowledge anyway; handlers are idempotent and verify-on-callback backstops.
   }
 
   res.status(200).json({ received: true });

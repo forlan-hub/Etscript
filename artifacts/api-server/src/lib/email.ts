@@ -4,7 +4,7 @@ const FROM_ADDRESS = "Etscript <receipts@etscript.site>";
 
 interface SendReceiptOpts {
   to: string;
-  type: "payg_export" | "premium_subscription" | "renewal";
+  type: "payg_export" | "premium_subscription" | "premium_quarterly" | "premium_annual" | "lifetime_access" | "renewal";
   amountKobo: number;
   manuscriptTitle?: string | null;
 }
@@ -20,16 +20,25 @@ function buildReceiptHtml(opts: SendReceiptOpts): string {
   const heading =
     type === "payg_export"
       ? "Clean Export Unlocked"
-      : type === "premium_subscription"
-        ? "Premium Plan Activated"
-        : "Premium Plan Renewed";
+      : type === "lifetime_access"
+        ? "Founder's Lifetime Access Activated"
+        : type === "premium_quarterly"
+          ? "Premium Quarterly Plan Activated"
+          : type === "premium_annual"
+            ? "Premium Annual Plan Activated"
+            : type === "premium_subscription"
+              ? "Premium Plan Activated"
+              : "Premium Plan Renewed";
 
-  const detail =
-    type === "payg_export"
-      ? `Your payment of <strong>${amount}</strong> unlocks a clean, watermark-free PDF and DOCX for <em>${manuscriptTitle ?? "your manuscript"}</em>. You can download your files any time from the preview page.`
-      : type === "premium_subscription"
-        ? `Your payment of <strong>${amount}</strong> activates your Etscript Premium plan. You now have unlimited clean exports for all your manuscripts every month.`
-        : `Your Premium plan has been renewed for <strong>${amount}</strong>. Unlimited clean exports continue for another month.`;
+  const planDetail: Record<SendReceiptOpts["type"], string> = {
+    payg_export: `Your payment of <strong>${amount}</strong> unlocks a clean, watermark-free PDF and DOCX for <em>${manuscriptTitle ?? "your manuscript"}</em>. You can download your files any time from the preview page.`,
+    premium_subscription: `Your payment of <strong>${amount}</strong> activates your Etscript Premium Monthly plan. You now have unlimited clean exports for all your manuscripts.`,
+    premium_quarterly: `Your payment of <strong>${amount}</strong> activates your Etscript Premium Quarterly plan. You have unlimited clean exports for the next 3 months.`,
+    premium_annual: `Your payment of <strong>${amount}</strong> activates your Etscript Premium Annual plan. You have unlimited clean exports for the next 12 months.`,
+    lifetime_access: `Your payment of <strong>${amount}</strong> grants you lifetime access to Etscript Premium. You never need to pay again — unlimited clean exports, forever.`,
+    renewal: `Your Premium plan has been renewed for <strong>${amount}</strong>. Unlimited clean exports continue for another month.`,
+  };
+  const detail = planDetail[type];
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,12 +104,12 @@ function buildReceiptHtml(opts: SendReceiptOpts): string {
 
 function buildReceiptSubject(type: SendReceiptOpts["type"]): string {
   switch (type) {
-    case "payg_export":
-      return "Your Etscript receipt — clean export unlocked";
-    case "premium_subscription":
-      return "Welcome to Etscript Premium — you're all set";
-    case "renewal":
-      return "Etscript Premium renewed — receipt enclosed";
+    case "payg_export":          return "Your Etscript receipt — clean export unlocked";
+    case "premium_subscription": return "Welcome to Etscript Premium — you're all set";
+    case "premium_quarterly":    return "Etscript Premium Quarterly activated — receipt enclosed";
+    case "premium_annual":       return "Etscript Premium Annual activated — receipt enclosed";
+    case "lifetime_access":      return "Founder's Lifetime Access confirmed — welcome forever";
+    case "renewal":              return "Etscript Premium renewed — receipt enclosed";
   }
 }
 
