@@ -18,6 +18,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Bold,
   Italic,
   Type,
@@ -29,6 +37,8 @@ import {
   ArrowRight,
   ArrowLeft,
   RefreshCw,
+  ChevronDown,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +58,20 @@ function extractChapterTitles(html: string): string[] {
     h.replace(/<[^>]+>/g, ""),
   );
 }
+
+const SECTION_TYPES = [
+  { label: "Disclaimer", keyword: "DISCLAIMER" },
+  { label: "Copyright", keyword: "COPYRIGHT" },
+  { label: "Dedication", keyword: "DEDICATION" },
+  { label: "Reader's Notice", keyword: "READER NOTICE" },
+  { label: "Foreword", keyword: "FOREWORD" },
+  { label: "Preface", keyword: "PREFACE" },
+  { label: "Introduction", keyword: "INTRODUCTION" },
+  { label: "Conclusion", keyword: "CONCLUSION" },
+  { label: "Epilogue", keyword: "EPILOGUE" },
+  { label: "Appendix", keyword: "APPENDIX" },
+  { label: "About the Author", keyword: "ABOUT THE AUTHOR" },
+] as const;
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -151,6 +175,23 @@ export default function ReviewPage() {
         break;
       }
     }
+  };
+
+  const applySectionType = (keyword: string) => {
+    if (!editor) return;
+    editor.commands.command(({ tr, state }) => {
+      const { $from } = state.selection;
+      const depth = $from.depth > 0 ? $from.depth : 1;
+      const start = $from.start(depth);
+      const end = $from.end(depth);
+      const headingNode = state.schema.nodes.heading.create(
+        { level: 2 },
+        state.schema.text(keyword),
+      );
+      tr.replaceRangeWith(start - 1, end + 1, headingNode);
+      return true;
+    });
+    editor.commands.focus();
   };
 
   const handleRegenerate = async () => {
@@ -257,6 +298,34 @@ export default function ReviewPage() {
               >
                 <Redo2 className="w-3.5 h-3.5" />
               </ToolbarButton>
+              <Separator orientation="vertical" className="h-5 mx-0.5" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 h-7 px-2 rounded text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  >
+                    <Tag className="w-3 h-3" />
+                    Section
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Convert block to section type
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {SECTION_TYPES.map((s) => (
+                    <DropdownMenuItem
+                      key={s.keyword}
+                      onSelect={() => applySectionType(s.keyword)}
+                      className="text-xs"
+                    >
+                      {s.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                 {saveStatus === "saving" && (
                   <span className="flex items-center gap-1">

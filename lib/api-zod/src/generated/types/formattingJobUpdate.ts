@@ -17,6 +17,9 @@ export interface FormattingJobUpdate {
   pageNumberPosition?: string;
   chapterNumberStyle?: string;
   showBranding?: boolean;
+  preserveBlankLines?: boolean;
+  autoDetectStructure?: boolean;
+  preservePageBreaks?: boolean;
   citationStyle?: string;
   letterData?: string;
   editedContent?: string;

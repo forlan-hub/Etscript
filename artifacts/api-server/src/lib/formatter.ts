@@ -31,9 +31,17 @@ type JobOptions = {
   pageNumberPosition: string | null;
   chapterNumberStyle: string | null;
   showBranding: boolean | null;
+  preserveBlankLines: boolean | null;
+  autoDetectStructure: boolean | null;
+  preservePageBreaks: boolean | null;
   citationStyle: string | null;
   letterData: string | null;
   editedContent?: string | null;
+};
+
+type ParseOptions = {
+  autoDetectStructure?: boolean;
+  preservePageBreaks?: boolean;
 };
 
 type LetterContent = {
@@ -317,7 +325,9 @@ function looksLikeSectionHeading(text: string): boolean {
   return SECTION_HEADING_RE.test(text);
 }
 
-function tokenizeHtml(html: string): HtmlToken[] {
+function tokenizeHtml(html: string, opts: ParseOptions = {}): HtmlToken[] {
+  const autoDetect = opts.autoDetectStructure !== false;
+  const keepBreaks = opts.preservePageBreaks !== false;
   const tokens: HtmlToken[] = [];
   const re = /<(h[123]|p|hr)(?:\s[^>]*)?>([^]*?)<\/\1>|<hr\s*\/?>/gi;
   let m: RegExpExecArray | null;
@@ -325,7 +335,7 @@ function tokenizeHtml(html: string): HtmlToken[] {
     const tag = (m[1] ?? "hr").toLowerCase();
     const text = decodeHtmlEntities(m[2] ?? "");
     if (tag === "hr") {
-      tokens.push({ kind: "page_break" });
+      if (keepBreaks) tokens.push({ kind: "page_break" });
     } else if (tag === "h1") {
       if (text) tokens.push({ kind: "heading", level: 1, text });
     } else if (tag === "h2") {
@@ -336,7 +346,7 @@ function tokenizeHtml(html: string): HtmlToken[] {
       // paragraph — detect [PAGE_BREAK] / [NEW_PAGE] markers or disguised headings
       if (/\[PAGE_BREAK\]|\[NEW_PAGE\]/i.test(text)) {
         tokens.push({ kind: "page_break" });
-      } else if (text && looksLikeSectionHeading(text)) {
+      } else if (autoDetect && text && looksLikeSectionHeading(text)) {
         // Promote ALL-CAPS / keyword-matching paragraphs to section headings
         tokens.push({ kind: "heading", level: 2, text });
       } else {
@@ -385,10 +395,10 @@ function groupTokensToChapters(tokens: HtmlToken[], fallbackTitle: string): Chap
 
 // ── DOCX parser: mammoth convertToHtml → structured sections ─────────────────
 
-async function parseDocxToChapters(buffer: Buffer, manuscriptTitle: string): Promise<Chapter[]> {
+async function parseDocxToChapters(buffer: Buffer, manuscriptTitle: string, opts: ParseOptions = {}): Promise<Chapter[]> {
   // Use convertToHtml to preserve headings, paragraph structure, and blank lines
   const result = await mammoth.convertToHtml({ buffer });
-  const tokens = tokenizeHtml(result.value);
+  const tokens = tokenizeHtml(result.value, opts);
   return groupTokensToChapters(tokens, manuscriptTitle);
 }
 
@@ -616,13 +626,14 @@ async function parseManuscriptToChapters(
   filename: string,
   manuscriptTitle: string,
   suite: "publishing" | "academic" | "business" | "letters",
+  opts: ParseOptions = {},
 ): Promise<Chapter[]> {
   const ext = (filename ?? "").toLowerCase().split(".").pop();
 
   if (ext === "pdf") return parsePdfToChapters(buffer, manuscriptTitle);
 
   if (ext === "docx") {
-    const chapters = await parseDocxToChapters(buffer, manuscriptTitle);
+    const chapters = await parseDocxToChapters(buffer, manuscriptTitle, opts);
     // For academic/business, re-run academic parser if the DOCX has no headings
     if ((suite === "academic" || suite === "business") && chapters.length <= 1 && !chapters[0]?.title) {
       const { value: raw } = await mammoth.extractRawText({ buffer });
@@ -838,8 +849,9 @@ async function generatePdfBuffer(
 
     for (const para of chapter.paragraphs) {
       if (!para.trim()) {
-        // Preserve intentional blank line as a visual gap
-        doc.moveDown(0.8);
+        if (job.preserveBlankLines !== false) {
+          doc.moveDown(0.8);
+        }
         continue;
       }
       doc.text(para.trim(), {
@@ -1001,13 +1013,14 @@ async function generateDocxBuffer(
 
     for (const para of chapter.paragraphs) {
       if (!para.trim()) {
-        // Preserve intentional blank line as an empty paragraph
-        sectionChildren.push(
-          new Paragraph({
-            spacing: { line: lineRule, after: 0 },
-            children: [],
-          }),
-        );
+        if (job.preserveBlankLines !== false) {
+          sectionChildren.push(
+            new Paragraph({
+              spacing: { line: lineRule, after: 0 },
+              children: [],
+            }),
+          );
+        }
         continue;
       }
       sectionChildren.push(
@@ -1634,7 +1647,11 @@ export async function generateFormattedFiles(
   } else if (manuscript.fileKey && manuscript.originalFilename) {
     try {
       const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
+      const parseOpts: ParseOptions = {
+        autoDetectStructure: job.autoDetectStructure !== false,
+        preservePageBreaks: job.preservePageBreaks !== false,
+      };
+      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite, parseOpts);
       wordCount = chapters.flatMap((c) => c.paragraphs).join(" ").split(/\s+/).filter(Boolean).length;
     } catch (err) {
       if (!(err instanceof MissingUploadError)) throw err;
@@ -1678,11 +1695,16 @@ export async function generateDocumentBuffer(
 
   let chapters: Chapter[];
 
+  const parseOpts: ParseOptions = {
+    autoDetectStructure: job.autoDetectStructure !== false,
+    preservePageBreaks: job.preservePageBreaks !== false,
+  };
+
   if (job.editedContent) {
     chapters = parseHtmlToChapters(job.editedContent);
   } else if (manuscript.fileKey && manuscript.originalFilename) {
     const fileBuffer = await downloadManuscriptBuffer(manuscript.fileKey);
-    chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
+    chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite, parseOpts);
   } else {
     chapters = parseTxtToChapters("", manuscript.title);
   }
@@ -1718,7 +1740,7 @@ function parseHtmlToParagraphs(html: string): string[] {
 
 export async function generateEditorContent(
   manuscript: ManuscriptInfo,
-  job?: { bookType: string | null; letterData: string | null },
+  job?: { bookType: string | null; letterData: string | null; autoDetectStructure?: boolean | null; preservePageBreaks?: boolean | null },
 ): Promise<{ html: string; wordCount: number }> {
   // ── Letters: generate editable HTML from the stored letter body ──────────
   if (job && getDocumentSuite(job.bookType) === "letters") {
@@ -1750,7 +1772,11 @@ export async function generateEditorContent(
         job && (getDocumentSuite(job.bookType) === "academic" || getDocumentSuite(job.bookType) === "business")
           ? (getDocumentSuite(job.bookType) as "academic" | "business")
           : "publishing";
-      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite);
+      const editorParseOpts: ParseOptions = {
+        autoDetectStructure: !job || job.autoDetectStructure !== false,
+        preservePageBreaks: !job || job.preservePageBreaks !== false,
+      };
+      chapters = await parseManuscriptToChapters(fileBuffer, manuscript.originalFilename, manuscript.title, suite, editorParseOpts);
       wordCount = chapters.flatMap((c) => c.paragraphs).join(" ").split(/\s+/).filter(Boolean).length;
     } catch (err) {
       if (!(err instanceof MissingUploadError)) throw err;

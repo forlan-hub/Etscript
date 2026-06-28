@@ -102,6 +102,9 @@ export const GetUploadUrlResponse = zod.object({
  * @summary List all formatting jobs for user
  */
 export const listJobsResponseShowBrandingDefault = true;
+export const listJobsResponsePreserveBlankLinesDefault = true;
+export const listJobsResponseAutoDetectStructureDefault = true;
+export const listJobsResponsePreservePageBreaksDefault = true;
 
 export const ListJobsResponseItem = zod.object({
   "id": zod.number(),
@@ -116,6 +119,9 @@ export const ListJobsResponseItem = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(listJobsResponseShowBrandingDefault),
+  "preserveBlankLines": zod.boolean().default(listJobsResponsePreserveBlankLinesDefault),
+  "autoDetectStructure": zod.boolean().default(listJobsResponseAutoDetectStructureDefault),
+  "preservePageBreaks": zod.boolean().default(listJobsResponsePreservePageBreaksDefault),
   "citationStyle": zod.string().nullish(),
   "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
@@ -160,6 +166,9 @@ export const GetJobParams = zod.object({
 })
 
 export const getJobResponseShowBrandingDefault = true;
+export const getJobResponsePreserveBlankLinesDefault = true;
+export const getJobResponseAutoDetectStructureDefault = true;
+export const getJobResponsePreservePageBreaksDefault = true;
 
 export const GetJobResponse = zod.object({
   "id": zod.number(),
@@ -174,6 +183,9 @@ export const GetJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(getJobResponseShowBrandingDefault),
+  "preserveBlankLines": zod.boolean().default(getJobResponsePreserveBlankLinesDefault),
+  "autoDetectStructure": zod.boolean().default(getJobResponseAutoDetectStructureDefault),
+  "preservePageBreaks": zod.boolean().default(getJobResponsePreservePageBreaksDefault),
   "citationStyle": zod.string().nullish(),
   "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
@@ -216,12 +228,18 @@ export const UpdateJobBody = zod.object({
   "pageNumberPosition": zod.string().optional(),
   "chapterNumberStyle": zod.string().optional(),
   "showBranding": zod.boolean().optional(),
+  "preserveBlankLines": zod.boolean().optional(),
+  "autoDetectStructure": zod.boolean().optional(),
+  "preservePageBreaks": zod.boolean().optional(),
   "citationStyle": zod.string().optional(),
   "letterData": zod.string().optional(),
   "editedContent": zod.string().optional()
 })
 
 export const updateJobResponseShowBrandingDefault = true;
+export const updateJobResponsePreserveBlankLinesDefault = true;
+export const updateJobResponseAutoDetectStructureDefault = true;
+export const updateJobResponsePreservePageBreaksDefault = true;
 
 export const UpdateJobResponse = zod.object({
   "id": zod.number(),
@@ -236,6 +254,9 @@ export const UpdateJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(updateJobResponseShowBrandingDefault),
+  "preserveBlankLines": zod.boolean().default(updateJobResponsePreserveBlankLinesDefault),
+  "autoDetectStructure": zod.boolean().default(updateJobResponseAutoDetectStructureDefault),
+  "preservePageBreaks": zod.boolean().default(updateJobResponsePreservePageBreaksDefault),
   "citationStyle": zod.string().nullish(),
   "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),
@@ -268,6 +289,9 @@ export const ProcessJobParams = zod.object({
 })
 
 export const processJobResponseShowBrandingDefault = true;
+export const processJobResponsePreserveBlankLinesDefault = true;
+export const processJobResponseAutoDetectStructureDefault = true;
+export const processJobResponsePreservePageBreaksDefault = true;
 
 export const ProcessJobResponse = zod.object({
   "id": zod.number(),
@@ -282,6 +306,9 @@ export const ProcessJobResponse = zod.object({
   "pageNumberPosition": zod.union([zod.literal('top_center'),zod.literal('top_left'),zod.literal('top_right'),zod.literal('bottom_center'),zod.literal('bottom_left'),zod.literal('bottom_right'),zod.literal(null)]).nullish(),
   "chapterNumberStyle": zod.union([zod.literal('arabic'),zod.literal('roman'),zod.literal('words'),zod.literal('none'),zod.literal(null)]).nullish(),
   "showBranding": zod.boolean().default(processJobResponseShowBrandingDefault),
+  "preserveBlankLines": zod.boolean().default(processJobResponsePreserveBlankLinesDefault),
+  "autoDetectStructure": zod.boolean().default(processJobResponseAutoDetectStructureDefault),
+  "preservePageBreaks": zod.boolean().default(processJobResponsePreservePageBreaksDefault),
   "citationStyle": zod.string().nullish(),
   "letterData": zod.string().nullish(),
   "editedContent": zod.string().nullish(),

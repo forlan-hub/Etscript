@@ -846,6 +846,15 @@ components:
         showBranding:
           type: boolean
           default: true
+        preserveBlankLines:
+          type: boolean
+          default: true
+        autoDetectStructure:
+          type: boolean
+          default: true
+        preservePageBreaks:
+          type: boolean
+          default: true
         citationStyle:
           type: ["string", "null"]
         letterData:
@@ -903,6 +912,12 @@ components:
         chapterNumberStyle:
           type: string
         showBranding:
+          type: boolean
+        preserveBlankLines:
+          type: boolean
+        autoDetectStructure:
+          type: boolean
+        preservePageBreaks:
           type: boolean
         citationStyle:
           type: string

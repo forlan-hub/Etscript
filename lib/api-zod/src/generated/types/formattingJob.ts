@@ -34,6 +34,9 @@ export interface FormattingJob {
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
   showBranding?: boolean;
+  preserveBlankLines?: boolean;
+  autoDetectStructure?: boolean;
+  preservePageBreaks?: boolean;
   /** @nullable */
   citationStyle?: string | null;
   /** @nullable */

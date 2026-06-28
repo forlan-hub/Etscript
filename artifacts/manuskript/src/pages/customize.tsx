@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRoute, useLocation } from "wouter";
 import { useGetJob, useUpdateJob, getGetJobQueryKey } from "@workspace/api-client-react";
-import { ArrowRight, ArrowLeft, Type, LayoutTemplate } from "lucide-react";
+import { ArrowRight, ArrowLeft, Type, LayoutTemplate, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,6 +30,9 @@ export default function CustomizePage() {
   const [pageNumberPosition, setPageNumberPosition] = useState("bottom_center");
   const [chapterNumberStyle, setChapterNumberStyle] = useState("arabic");
   const [showBranding, setShowBranding] = useState(true);
+  const [preserveBlankLines, setPreserveBlankLines] = useState(true);
+  const [autoDetectStructure, setAutoDetectStructure] = useState(true);
+  const [preservePageBreaks, setPreservePageBreaks] = useState(true);
 
   const initializedRef = useRef(false);
 
@@ -43,6 +46,9 @@ export default function CustomizePage() {
       if (job.chapterNumberStyle) setChapterNumberStyle(job.chapterNumberStyle);
       const localDefault = localStorage.getItem("etscript_show_branding") !== "false";
       setShowBranding(job.showBranding ?? localDefault);
+      setPreserveBlankLines(job.preserveBlankLines ?? true);
+      setAutoDetectStructure(job.autoDetectStructure ?? true);
+      setPreservePageBreaks(job.preservePageBreaks ?? true);
       initializedRef.current = true;
     }
   }, [job]);
@@ -58,6 +64,9 @@ export default function CustomizePage() {
         pageNumberPosition,
         chapterNumberStyle,
         showBranding,
+        preserveBlankLines,
+        autoDetectStructure,
+        preservePageBreaks,
       }
     });
 
@@ -219,6 +228,58 @@ export default function CustomizePage() {
                     onCheckedChange={(v) => {
                       setShowBranding(v);
                       autoSave({ showBranding: v });
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="font-serif text-lg flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" /> Preserve Author Intent
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="preserve-blank-lines" className="cursor-pointer text-sm">Preserve blank lines</Label>
+                    <p className="text-xs text-muted-foreground">Keep intentional blank lines between paragraphs in formatted output</p>
+                  </div>
+                  <Switch
+                    id="preserve-blank-lines"
+                    checked={preserveBlankLines}
+                    onCheckedChange={(v) => {
+                      setPreserveBlankLines(v);
+                      autoSave({ preserveBlankLines: v });
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="auto-detect" className="cursor-pointer text-sm">Auto-detect section types</Label>
+                    <p className="text-xs text-muted-foreground">Promote keyword paragraphs (e.g. "DISCLAIMER") to section headings</p>
+                  </div>
+                  <Switch
+                    id="auto-detect"
+                    checked={autoDetectStructure}
+                    onCheckedChange={(v) => {
+                      setAutoDetectStructure(v);
+                      autoSave({ autoDetectStructure: v });
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="preserve-breaks" className="cursor-pointer text-sm">Preserve page breaks</Label>
+                    <p className="text-xs text-muted-foreground">Honour horizontal rules and [PAGE_BREAK] markers from the source file</p>
+                  </div>
+                  <Switch
+                    id="preserve-breaks"
+                    checked={preservePageBreaks}
+                    onCheckedChange={(v) => {
+                      setPreservePageBreaks(v);
+                      autoSave({ preservePageBreaks: v });
                     }}
                   />
                 </div>

@@ -143,6 +143,9 @@ export interface FormattingJob {
   /** @nullable */
   chapterNumberStyle?: FormattingJobChapterNumberStyle;
   showBranding?: boolean;
+  preserveBlankLines?: boolean;
+  autoDetectStructure?: boolean;
+  preservePageBreaks?: boolean;
   /** @nullable */
   citationStyle?: string | null;
   /** @nullable */
@@ -179,6 +182,9 @@ export interface FormattingJobUpdate {
   pageNumberPosition?: string;
   chapterNumberStyle?: string;
   showBranding?: boolean;
+  preserveBlankLines?: boolean;
+  autoDetectStructure?: boolean;
+  preservePageBreaks?: boolean;
   citationStyle?: string;
   letterData?: string;
   editedContent?: string;
